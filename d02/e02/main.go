@@ -46,6 +46,8 @@ func lineIntegers(fh *bufio.Reader, c chan []int) {
 func main() {
   fh, err := os.Open(os.Args[1])
   check(err)
+  defer fh.Close()
+
   reader := bufio.NewReader(fh)
   c := make(chan []int, 100)
 
