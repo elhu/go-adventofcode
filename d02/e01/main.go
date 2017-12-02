@@ -27,6 +27,8 @@ func readLines(fh *bufio.Reader, c chan string) {
 func main() {
   fh, err := os.Open(os.Args[1])
   check(err)
+  defer fh.Close()
+
   reader := bufio.NewReader(fh)
   c := make(chan string, 100)
 
