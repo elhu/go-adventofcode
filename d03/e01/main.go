@@ -20,11 +20,11 @@ func wtfIntAbs(value int) int {
 }
 
 func ringStart(index int) int {
-	return (index-1)*(index)/2*8 + 2
+	return (index - 1) * (index) / 2 * 8 + 2
 }
 
 func ringEnd(index int) int {
-	return index*(index+1)/2*8 + 1
+	return index * (index + 1) / 2 * 8 + 1
 }
 
 func findRing(target int) int {
@@ -44,24 +44,18 @@ func solve(target int) int {
 
 	side := (target - ringStart(ring)) / (ring * 2)
 
-	sideStart := ringStart(ring) + side*ring*2
-	sideEnd := ringStart(ring) + (side+1)*ring*2 - 1
+	sideStart := ringStart(ring) + side * ring * 2
+	sideEnd := ringStart(ring) + (side + 1) * ring * 2  - 1
 
-	sideMiddle := (sideEnd-sideStart)/2 + sideStart
+	sideMiddle := (sideEnd - sideStart) / 2 + sideStart
 
 	x, y := 0, 0
 
 	switch side {
-	case right:
+	case right, left:
 		x = ring
 		y = wtfIntAbs(sideMiddle - target)
-	case top:
-		x = wtfIntAbs(sideMiddle - target)
-		y = ring
-	case left:
-		x = ring
-		y = wtfIntAbs(sideMiddle - target)
-	case bottom:
+	case top, bottom:
 		x = wtfIntAbs(sideMiddle - target)
 		y = ring
 	}
