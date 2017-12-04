@@ -5,6 +5,21 @@ import "bufio"
 import "strings"
 import "io"
 import "fmt"
+import "sort"
+
+type byteSlice []byte
+
+func (b byteSlice) Len() int {
+  return len(b)
+}
+
+func (b byteSlice) Less(i, j int) bool {
+  return b[i] < b[j]
+}
+
+func (b byteSlice) Swap(i, j int) {
+  b[i], b[j] = b[j], b[i]
+}
 
 func check(e error) {
   if e != nil {
@@ -35,8 +50,17 @@ func uniq(items []string) []string {
   return uniqueItems
 }
 
+func sorted(items []string) []string {
+  for i, item := range(items) {
+    itemAsBytes := byteSlice(item)
+    sort.Sort(itemAsBytes[: ])
+    items[i] = string(itemAsBytes)
+  }
+  return items
+}
+
 func valid(words []string) bool {
-  return len(words) == len(uniq(words))
+  return len(words) == len(uniq(sorted(words)))
 }
 
 func main() {
