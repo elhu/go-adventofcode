@@ -21,7 +21,6 @@ func arrayToString(a []int, delim string) string {
 func showGrid(grid [][]int) {
 	w := tabwriter.NewWriter(os.Stdout, 4, 0, 1, ' ', tabwriter.AlignRight)
 	for i := 0; i < len(grid); i++ {
-		// fmt.Println([]byte(arrayToString(grid[i], "\t") + "\t\n"))
 		w.Write([]byte(arrayToString(grid[i], "\t") + "\t\n"))
 	}
 	w.Flush()
@@ -32,15 +31,15 @@ func initGrid(size int) [][]int {
 	for i := 0; i < size; i++ {
 		grid[i] = make([]int, size)
 	}
-	grid[size/2][size/2] = 1
+	grid[size / 2][size / 2] = 1
 
 	return grid
 }
 
 func sumSurroundings(grid [][]int, x int, y int) int {
 	sum := 0
-	for j := y - 1; j <= y+1; j++ {
-		for i := x - 1; i <= x+1; i++ {
+	for j := y - 1; j <= y + 1; j++ {
+		for i := x - 1; i <= x + 1; i++ {
 			if i != x || j != y {
 				sum += grid[j][i]
 			}
@@ -52,7 +51,7 @@ func sumSurroundings(grid [][]int, x int, y int) int {
 func solve(target int) int {
 	gridSize := 20
 	grid := initGrid(gridSize)
-	x := gridSize/2 + 1
+	x := gridSize / 2 + 1
 	y := gridSize / 2
 	current := 0
 	ring := 1
@@ -64,7 +63,7 @@ func solve(target int) int {
 		grid[y][x] = current
 		posInSide++
 		// Reached end of side, switch side
-		if posInSide == ring*2 {
+		if posInSide == ring * 2 {
 			// Reached the end, switch ring
 			if side == bottom {
 				x++
