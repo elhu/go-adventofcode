@@ -15,20 +15,15 @@ func min(a, b int) int {
   return a
 }
 
-func compute(n int64, factor int64, cond int64) []int64 {
-  res := make([]int64, 0, iterations)
-
-  count := 0
-  for {
+func compute(n int64, factor int64, cond int64, c chan int64) {
+  for i := 0; i < iterations; {
     n = n * factor % 2147483647
     if n % cond == 0 {
-      count++
-      res = append(res, n)
-    }
-    if count == iterations - 1 {
-      return res
+      i++
+      c <- n
     }
   }
+  close(c)
 }
 
 func compareBits(a, b int64) bool {
@@ -46,12 +41,16 @@ func compareBits(a, b int64) bool {
 }
 
 func solve(a, b int64) int {
-  resA := compute(a, 16807, 4)
-  resB := compute(b, 48271, 8)
+  cA := make(chan int64, 1000)
+  cB := make(chan int64, 1000)
+  go compute(a, 16807, 4, cA)
+  go compute(b, 48271, 8, cB)
 
   res := 0
-  for i := 0; i < min(len(resA), len(resB)); i++ {
-    if compareBits(resA[i], resB[i]) {
+  for i := 0; i < iterations; i++ {
+    resA := <- cA
+    resB := <- cB
+    if compareBits(resA, resB) {
       res++
     }
   }
