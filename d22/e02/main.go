@@ -8,6 +8,10 @@ import (
   "strings"
 )
 
+// Arbitrary width to compute hashmap
+// Assumes boundaries to a theoritically infinite grid, but speeds things up
+const MaxLen = 10000000000
+
 const (
   up = iota
   right = iota
@@ -31,7 +35,7 @@ type Coord struct {
   X, Y int
 }
 
-type Set map[string]int
+type Set map[int]int
 
 func (c *Carrier) Move() {
   switch c.Dir {
@@ -57,8 +61,8 @@ func (c *Carrier) TurnRight() {
   c.Dir = (c.Dir + 1) % 4
 }
 
-func (c Coord) ToKey() string {
-  return fmt.Sprintf("%d:%d", c.X, c.Y)
+func (c Coord) ToKey() int {
+  return c.Y * MaxLen + c.X
 }
 
 func (s Set) State(k Coord) int {
@@ -76,22 +80,13 @@ func (s Set) Add(k Coord, state int) {
 func (s Set) AdvanceState(k Coord) int {
   state, ok := s[k.ToKey()]
   if ok {
-    if state == flagged {
-      delete(s, k.ToKey())
-      return clean
-    } else {
-      state++
-      s[k.ToKey()] = state
-      return state
-    }
+    newState := (state + 1) % 4
+    s[k.ToKey()] = newState
+    return newState
   } else {
     s[k.ToKey()] = weakened
     return weakened
   }
-}
-
-func (s Set) Remove(k Coord) {
-  delete(s, k.ToKey())
 }
 
 func check(e error) {
@@ -112,7 +107,7 @@ func readLines(fh *bufio.Reader, c chan string) {
 }
 
 func markViruses(c chan string) (Set, Coord) {
-  s := make(Set)
+  s := make(Set, 10000)
 
   i := 0
   var width int
