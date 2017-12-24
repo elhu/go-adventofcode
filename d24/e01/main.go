@@ -6,6 +6,8 @@ import (
   "fmt"
   "strconv"
   "strings"
+  "sync/atomic"
+  "time"
 )
 
 type Component struct {
@@ -71,7 +73,12 @@ func FindCandidates(pins int, parts []*Component, used *Set) []*Component {
   return candidates
 }
 
-func AddComponent(currPin int, parts []*Component, used *Set, resChan chan int) {
+func AddComponent(currPin int, parts []*Component, used *Set, resChan chan int, counter *int64) {
+  atomic.AddInt64(counter, 1)
+  defer func() {
+    // Hide exceptions about sending on closed channel
+    recover()
+  }()
   candidates := FindCandidates(currPin, parts, used)
   for _, c := range candidates {
     cUsed := used.Copy()
@@ -80,17 +87,24 @@ func AddComponent(currPin int, parts []*Component, used *Set, resChan chan int) 
       newPin = c.Right
     }
     cUsed.Add(c)
-    go AddComponent(newPin, parts, cUsed, resChan)
+    go AddComponent(newPin, parts, cUsed, resChan, counter)
   }
-  fmt.Printf("%d\n", used.Sum)
+  atomic.AddInt64(counter, -1)
   resChan <- used.Sum
+  if *counter == 0 {
+    time.Sleep(time.Second)
+    if *counter == 0 {
+      close(resChan)
+    }
+  }
 }
 
 func Solve(parts []*Component) int {
   used := NewSet()
   max := 0
   resChan := make(chan int)
-  go AddComponent(0, parts, used, resChan)
+  var counter int64
+  go AddComponent(0, parts, used, resChan, &counter)
 
   for sum := range resChan {
     if sum > max {

@@ -114,9 +114,10 @@ func Solve(parts []*Component) int {
     if res[0] > maxLen {
       maxLen = res[0]
       max = 0
-    }
-    if res[1] > max {
-      max = res[1]
+    } else if res[0] == maxLen {
+      if res[1] > max {
+        max = res[1]
+      }
     }
   }
   return max
