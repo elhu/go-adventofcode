@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"unicode"
 )
 
 func check(e error) {
@@ -14,8 +13,17 @@ func check(e error) {
 	}
 }
 
+const diff = 'A' - 'a'
+
+func abs(a int) int {
+	if a < 0 {
+		return -a
+	}
+	return a
+}
+
 func kaboom(a, b byte) bool {
-	return byte(unicode.ToUpper(rune(a))) == byte(unicode.ToUpper(rune(b))) && a != b
+	return abs(int(a-b)) == diff
 }
 
 func reduce(units []byte) ([]byte, int) {
