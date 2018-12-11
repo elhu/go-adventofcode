@@ -51,21 +51,36 @@ func main() {
 		}
 	}
 	max := minInt
-	maxX, maxY, maxSize := 0, 0, 0
+	resChan := make(chan [4]int, 300)
 	for squareSize := 1; squareSize <= 300; squareSize++ {
-		for i := 1; i < gridSize-squareSize; i++ {
-			for j := 1; j < gridSize-squareSize; j++ {
-				total := 0
-				for k := 0; k < squareSize; k++ {
-					total += sum(grid[i+k][j : j+squareSize])
-				}
-				if total > max {
-					maxX = j
-					maxY = i
-					maxSize = squareSize
-					max = total
+		go func(squareSize int) {
+			max := minInt
+			maxX, maxY := 0, 0
+			for i := 1; i < gridSize-squareSize; i++ {
+				for j := 1; j < gridSize-squareSize; j++ {
+					total := 0
+					for k := 0; k < squareSize; k++ {
+						total += sum(grid[i+k][j : j+squareSize])
+					}
+					if total > max {
+						maxX = j
+						maxY = i
+						max = total
+					}
 				}
 			}
+			resChan <- [4]int{maxX, maxY, max, squareSize}
+		}(squareSize)
+	}
+	max = minInt
+	maxX, maxY, maxSize := 0, 0, 0
+	for i := 1; i <= 300; i++ {
+		res := <-resChan
+		if res[2] > max {
+			maxX = res[0]
+			maxY = res[1]
+			max = res[2]
+			maxSize = res[3]
 		}
 	}
 	fmt.Printf("%d,%d,%d\n", maxX, maxY, maxSize)
