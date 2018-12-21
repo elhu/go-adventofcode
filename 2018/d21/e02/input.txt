@@ -1,0 +1,32 @@
+#ip 1
+seti 123 0 5             # 0:
+bani 5 456 5             # 1: Loop 1 entry point
+eqri 5 72 5              # 2:
+addr 5 1 1               # 3:
+seti 0 0 1               # 4: Goto loop 1
+seti 0 3 5               # 5:
+bori 5 65536 4           # 6:
+seti 13284195 4 5        # 7:
+bani 4 255 3             # 8:
+addr 5 3 5               # 9:
+bani 5 16777215 5        # 10:
+muli 5 65899 5           # 11:
+bani 5 16777215 5        # 12:
+gtir 256 4 3             # 13:
+addr 3 1 1               # 14:
+addi 1 1 1               # 15:
+seti 27 1 1              # 16: Goto 28
+seti 0 5 3               # 17:
+addi 3 1 2               # 18:
+muli 2 256 2             # 19:
+gtrr 2 4 2               # 20:
+addr 2 1 1               # 21:
+addi 1 1 1               # 22:
+seti 25 2 1              # 23: Goto 26
+addi 3 1 3               # 24:
+seti 17 1 1              # 25: Goto 18
+setr 3 7 4               # 26:
+seti 7 3 1               # 27: Goto 8
+eqrr 5 0 3               # 28:
+addr 3 1 1               # 29:
+seti 5 3 1               # 30: Goto 6
