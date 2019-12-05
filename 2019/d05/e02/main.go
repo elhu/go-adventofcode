@@ -25,71 +25,40 @@ func codeToArgType(code int) []int {
 	return res
 }
 
-func add(opcodes []int, pos int) {
-	var a, b int
+func getArgs(opcodes []int, pos, numArgs int) []int {
 	argTypes := codeToArgType(opcodes[pos])
-	if len(argTypes) > 0 && argTypes[0] == 1 {
-		a = opcodes[pos+1]
-	} else {
-		a = opcodes[opcodes[pos+1]]
+	args := make([]int, 0, numArgs)
+	for i := 0; i < numArgs; i++ {
+		if len(argTypes) > i && argTypes[i] == 1 {
+			args = append(args, opcodes[pos+i+1])
+		} else {
+			args = append(args, opcodes[opcodes[pos+i+1]])
+		}
 	}
-	if len(argTypes) > 1 && argTypes[1] == 1 {
-		b = opcodes[pos+2]
-	} else {
-		b = opcodes[opcodes[pos+2]]
-	}
-	// fmt.Printf("Adding %d and %d and putting result at pos %d\n", a, b, opcodes[pos+3])
-	opcodes[opcodes[pos+3]] = a + b
+	return args
+}
+
+func add(opcodes []int, pos int) {
+	args := getArgs(opcodes, pos, 2)
+	opcodes[opcodes[pos+3]] = args[0] + args[1]
 }
 
 func multiply(opcodes []int, pos int) {
-	var a, b int
-	argTypes := codeToArgType(opcodes[pos])
-	if len(argTypes) > 0 && argTypes[0] == 1 {
-		a = opcodes[pos+1]
-	} else {
-		a = opcodes[opcodes[pos+1]]
-	}
-	if len(argTypes) > 1 && argTypes[1] == 1 {
-		b = opcodes[pos+2]
-	} else {
-		b = opcodes[opcodes[pos+2]]
-	}
-	// fmt.Printf("Multiplying %d and %d and putting result at pos %d\n", a, b, opcodes[pos+3])
-	opcodes[opcodes[pos+3]] = a * b
+	args := getArgs(opcodes, pos, 2)
+	opcodes[opcodes[pos+3]] = args[0] * args[1]
 }
 
 func save(opcodes []int, pos int) {
-	// fmt.Printf("Saving %d at pos %d\n", input, opcodes[pos+1])
 	opcodes[opcodes[pos+1]] = input
 }
 
 func output(opcodes []int, pos int) {
-	var a int
-	argTypes := codeToArgType(opcodes[pos])
-	if len(argTypes) > 0 && argTypes[0] == 1 {
-		a = opcodes[pos+1]
-	} else {
-		a = opcodes[opcodes[pos+1]]
-	}
-	fmt.Printf("Output: %d\n", a)
+	fmt.Printf("Output: %d\n", getArgs(opcodes, pos, 1)[0])
 }
 
 func lessThan(opcodes []int, pos int) {
-	var a, b int
-	argTypes := codeToArgType(opcodes[pos])
-	if len(argTypes) > 0 && argTypes[0] == 1 {
-		a = opcodes[pos+1]
-	} else {
-		a = opcodes[opcodes[pos+1]]
-	}
-	if len(argTypes) > 1 && argTypes[1] == 1 {
-		b = opcodes[pos+2]
-	} else {
-		b = opcodes[opcodes[pos+2]]
-	}
-	// fmt.Printf("Checking if %d is less than %d\n", a, b)
-	if a < b {
+	args := getArgs(opcodes, pos, 2)
+	if args[0] < args[1] {
 		opcodes[opcodes[pos+3]] = 1
 	} else {
 		opcodes[opcodes[pos+3]] = 0
@@ -97,20 +66,8 @@ func lessThan(opcodes []int, pos int) {
 }
 
 func equals(opcodes []int, pos int) {
-	var a, b int
-	argTypes := codeToArgType(opcodes[pos])
-	if len(argTypes) > 0 && argTypes[0] == 1 {
-		a = opcodes[pos+1]
-	} else {
-		a = opcodes[opcodes[pos+1]]
-	}
-	if len(argTypes) > 1 && argTypes[1] == 1 {
-		b = opcodes[pos+2]
-	} else {
-		b = opcodes[opcodes[pos+2]]
-	}
-	// fmt.Printf("Checking if %d is equal to %d\n", a, b)
-	if a == b {
+	args := getArgs(opcodes, pos, 2)
+	if args[0] == args[1] {
 		opcodes[opcodes[pos+3]] = 1
 	} else {
 		opcodes[opcodes[pos+3]] = 0
@@ -118,39 +75,17 @@ func equals(opcodes []int, pos int) {
 }
 
 func jumpIfTrue(opcodes []int, pos int) int {
-	var a, b int
-	argTypes := codeToArgType(opcodes[pos])
-	if len(argTypes) > 0 && argTypes[0] == 1 {
-		a = opcodes[pos+1]
-	} else {
-		a = opcodes[opcodes[pos+1]]
-	}
-	if len(argTypes) > 1 && argTypes[1] == 1 {
-		b = opcodes[pos+2]
-	} else {
-		b = opcodes[opcodes[pos+2]]
-	}
-	if a != 0 {
-		return b
+	args := getArgs(opcodes, pos, 2)
+	if args[0] != 0 {
+		return args[1]
 	}
 	return pos + 3
 }
 
 func jumpIfFalse(opcodes []int, pos int) int {
-	var a, b int
-	argTypes := codeToArgType(opcodes[pos])
-	if len(argTypes) > 0 && argTypes[0] == 1 {
-		a = opcodes[pos+1]
-	} else {
-		a = opcodes[opcodes[pos+1]]
-	}
-	if len(argTypes) > 1 && argTypes[1] == 1 {
-		b = opcodes[pos+2]
-	} else {
-		b = opcodes[opcodes[pos+2]]
-	}
-	if a == 0 {
-		return b
+	args := getArgs(opcodes, pos, 2)
+	if args[0] == 0 {
+		return args[1]
 	}
 	return pos + 3
 }
