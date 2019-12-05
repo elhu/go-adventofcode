@@ -38,40 +38,46 @@ func getArgs(opcodes []int, pos, numArgs int) []int {
 	return args
 }
 
-func add(opcodes []int, pos int) {
+func add(opcodes []int, pos int) int {
 	args := getArgs(opcodes, pos, 2)
 	opcodes[opcodes[pos+3]] = args[0] + args[1]
+	return pos + 4
 }
 
-func multiply(opcodes []int, pos int) {
+func multiply(opcodes []int, pos int) int {
 	args := getArgs(opcodes, pos, 2)
 	opcodes[opcodes[pos+3]] = args[0] * args[1]
+	return pos + 4
 }
 
-func save(opcodes []int, pos int) {
+func save(opcodes []int, pos int) int {
 	opcodes[opcodes[pos+1]] = input
+	return pos + 2
 }
 
-func output(opcodes []int, pos int) {
+func output(opcodes []int, pos int) int {
 	fmt.Printf("Output: %d\n", getArgs(opcodes, pos, 1)[0])
+	return pos + 2
 }
 
-func lessThan(opcodes []int, pos int) {
+func lessThan(opcodes []int, pos int) int {
 	args := getArgs(opcodes, pos, 2)
 	if args[0] < args[1] {
 		opcodes[opcodes[pos+3]] = 1
 	} else {
 		opcodes[opcodes[pos+3]] = 0
 	}
+	return pos + 4
 }
 
-func equals(opcodes []int, pos int) {
+func equals(opcodes []int, pos int) int {
 	args := getArgs(opcodes, pos, 2)
 	if args[0] == args[1] {
 		opcodes[opcodes[pos+3]] = 1
 	} else {
 		opcodes[opcodes[pos+3]] = 0
 	}
+	return pos + 4
 }
 
 func jumpIfTrue(opcodes []int, pos int) int {
@@ -90,34 +96,25 @@ func jumpIfFalse(opcodes []int, pos int) int {
 	return pos + 3
 }
 
+var instructions = map[int](func([]int, int) int){
+	1: add,
+	2: multiply,
+	3: save,
+	4: output,
+	5: jumpIfTrue,
+	6: jumpIfFalse,
+	7: lessThan,
+	8: equals,
+}
+
 func solve(opcodes []int) {
 	pos := 0
 	// fmt.Println(opcodes)
 	for opcodes[pos] != 99 {
 		// fmt.Printf("Processing pos %d => %d\n", pos, opcodes[pos])
 		code := opcodes[pos] % 100
-		if code == 1 {
-			add(opcodes, pos)
-			pos += 4
-		} else if code == 2 {
-			multiply(opcodes, pos)
-			pos += 4
-		} else if code == 3 {
-			save(opcodes, pos)
-			pos += 2
-		} else if code == 4 {
-			output(opcodes, pos)
-			pos += 2
-		} else if code == 5 {
-			pos = jumpIfTrue(opcodes, pos)
-		} else if code == 6 {
-			pos = jumpIfFalse(opcodes, pos)
-		} else if code == 7 {
-			lessThan(opcodes, pos)
-			pos += 4
-		} else if code == 8 {
-			equals(opcodes, pos)
-			pos += 4
+		if fn, exists := instructions[code]; exists {
+			pos = fn(opcodes, pos)
 		} else {
 			check(fmt.Errorf("found unexpected opcode %d at position %d", opcodes[pos], pos))
 		}
