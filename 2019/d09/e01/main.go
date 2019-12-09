@@ -28,38 +28,45 @@ func codeToArgType(code int) []int {
 func getArgs(opcodes []int, pos, numArgs int) []int {
 	argTypes := codeToArgType(opcodes[pos])
 	args := make([]int, 0, numArgs)
-	fmt.Printf("Argtypes: %v\n", argTypes)
 	for i := 0; i < numArgs; i++ {
 		if len(argTypes) > i && argTypes[i] == 2 {
 			args = append(args, opcodes[relativeBase+opcodes[pos+i+1]])
 		} else if len(argTypes) > i && argTypes[i] == 1 {
 			args = append(args, opcodes[pos+i+1])
 		} else {
-			// fmt.Printf("1. Trying to access offset %d\n", pos+i+1)
-			// fmt.Printf("2. Trying to access offset %d\n", opcodes[pos+i+1])
 			args = append(args, opcodes[opcodes[pos+i+1]])
 		}
 	}
 	return args
 }
 
+func getReturnPos(opcodes []int, pos, returnOffset int) int {
+	argTypes := codeToArgType(opcodes[pos])
+	if len(argTypes) >= returnOffset && argTypes[returnOffset-1] == 2 {
+		return relativeBase + opcodes[pos+returnOffset]
+	} else if len(argTypes) >= returnOffset && argTypes[returnOffset-1] == 1 {
+		return pos + returnOffset
+	}
+	return opcodes[pos+returnOffset]
+}
+
 func add(opcodes []int, pos int) int {
-	args := getArgs(opcodes, pos, 3)
-	fmt.Printf("[%d,%d,%d,%d] %d <=> %d\n", opcodes[pos], opcodes[pos+1], opcodes[pos+2], opcodes[pos+3], opcodes[pos+3], args[2])
-	opcodes[args[2]] = args[0] + args[1]
+	args := getArgs(opcodes, pos, 2)
+	returnPos := getReturnPos(opcodes, pos, 3)
+	opcodes[returnPos] = args[0] + args[1]
 	return pos + 4
 }
 
 func multiply(opcodes []int, pos int) int {
 	args := getArgs(opcodes, pos, 2)
-	opcodes[opcodes[pos+3]] = args[0] * args[1]
+	returnPos := getReturnPos(opcodes, pos, 3)
+	opcodes[returnPos] = args[0] * args[1]
 	return pos + 4
 }
 
 func save(opcodes []int, pos int) int {
-	args := getArgs(opcodes, pos, 2)
-	opcodes[args[0]] = input
-	// fmt.Printf("Saving %d at pos %d\n", input, opcodes[pos+1])
+	returnPos := getReturnPos(opcodes, pos, 1)
+	opcodes[returnPos] = input
 	return pos + 2
 }
 
@@ -70,20 +77,22 @@ func output(opcodes []int, pos int) int {
 
 func lessThan(opcodes []int, pos int) int {
 	args := getArgs(opcodes, pos, 2)
+	returnPos := getReturnPos(opcodes, pos, 3)
 	if args[0] < args[1] {
-		opcodes[opcodes[pos+3]] = 1
+		opcodes[returnPos] = 1
 	} else {
-		opcodes[opcodes[pos+3]] = 0
+		opcodes[returnPos] = 0
 	}
 	return pos + 4
 }
 
 func equals(opcodes []int, pos int) int {
 	args := getArgs(opcodes, pos, 2)
+	returnPos := getReturnPos(opcodes, pos, 3)
 	if args[0] == args[1] {
-		opcodes[opcodes[pos+3]] = 1
+		opcodes[returnPos] = 1
 	} else {
-		opcodes[opcodes[pos+3]] = 0
+		opcodes[returnPos] = 0
 	}
 	return pos + 4
 }
@@ -106,7 +115,6 @@ func jumpIfFalse(opcodes []int, pos int) int {
 
 func moveRelativeBase(opcodes []int, pos int) int {
 	args := getArgs(opcodes, pos, 1)
-	// fmt.Printf("Moving relative base by %d (was %d)\n", args[0], relativeBase)
 	relativeBase += args[0]
 	return pos + 2
 }
@@ -125,18 +133,13 @@ var instructions = map[int](func([]int, int) int){
 
 func solve(opcodes []int) {
 	pos := 0
-	// fmt.Println(opcodes)
 	for opcodes[pos] != 99 {
-		// fmt.Printf("Evaluating intcode %d at position %d\n", opcodes[pos], pos)
-		// fmt.Printf("Processing pos %d => %d\n", pos, opcodes[pos])
 		code := opcodes[pos] % 100
 		if fn, exists := instructions[code]; exists {
 			pos = fn(opcodes, pos)
 		} else {
-			// check(fmt.Errorf("found unexpected opcode %d at position %d", opcodes[pos], pos))
+			check(fmt.Errorf("found unexpected opcode %d at position %d", opcodes[pos], pos))
 		}
-		// fmt.Println(opcodes)
-		// fmt.Printf("Current relative base %d\n", relativeBase)
 	}
 	fmt.Println("Exit code found, exiting")
 }
