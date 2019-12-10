@@ -71,45 +71,51 @@ func vector(a, b coords) coords {
 
 func solve(asteroids map[int]int) int {
 	max := 0
-	// for base := range asteroids {
-	base := coordsToKey(coords{5, 8})
-	for target, v := range asteroids {
-		if v == 1 && target != base {
-			bc := keyToCoords(base)
-			tc := keyToCoords(target)
-			vec := vector(bc, tc)
-			inSight := true
-			for bc.x != tc.x && bc.y != tc.y {
-				if _, exists := asteroids[coordsToKey(bc)]; exists {
-					if inSight {
-						inSight = false
-					} else {
-						asteroids[target] = 0
-					}
-				}
+	var maxBase coords
+	for base := range asteroids {
+		for target, v := range asteroids {
+			if v == 1 && target != base {
+				bc := keyToCoords(base)
+				tc := keyToCoords(target)
+				vec := vector(bc, tc)
+				inSight := true
 				bc.x += vec.x
 				bc.y += vec.y
-			}
-			if !inSight {
-				asteroids[target] = 0
+				for bc.x != tc.x || bc.y != tc.y {
+					if v, exists := asteroids[coordsToKey(bc)]; exists && v == 1 {
+						if inSight {
+							inSight = false
+						} else {
+							asteroids[target] = 0
+						}
+					}
+					bc.x += vec.x
+					bc.y += vec.y
+				}
+				if !inSight {
+					asteroids[target] = 0
+				} else {
+				}
 			}
 		}
-	}
-	count := 0
-	for _, v := range asteroids {
-		if v == 1 {
-			count++
+		// Remove base point from count
+		count := -1
+		for _, v := range asteroids {
+			if v == 1 {
+				count++
+			}
+		}
+		// fmt.Printf("%v has %d in sight\n", keyToCoords(base), count)
+		if count > max {
+			max = count
+			maxBase = keyToCoords(base)
+		}
+		// reset map
+		for k := range asteroids {
+			asteroids[k] = 1
 		}
 	}
-	fmt.Printf("%v has %d in sight\n", keyToCoords(base), count)
-	if count > max {
-		max = count
-	}
-	// reset map
-	for k := range asteroids {
-		asteroids[k] = 1
-	}
-	// }
+	fmt.Printf("Base found: %v\n", maxBase)
 	return max
 }
 
