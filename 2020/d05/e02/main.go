@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
-	"math"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -15,40 +15,19 @@ func check(e error) {
 	}
 }
 
-func computeRow(str string) int {
-	low := 0.0
-	high := 127.0
-	for _, c := range str {
-		if c == 'F' {
-			high = math.Floor(high - (high-low)/2)
-		} else if c == 'B' {
-			low = math.Ceil(low + (high-low)/2)
-		}
-	}
-	return int(low)
+func computeSeatID(str string) int64 {
+	str = strings.ReplaceAll(str, "F", "0")
+	str = strings.ReplaceAll(str, "B", "1")
+	str = strings.ReplaceAll(str, "L", "0")
+	str = strings.ReplaceAll(str, "R", "1")
+	str = fmt.Sprintf("0b%s", str)
+	i, err := strconv.ParseInt(str, 0, 64)
+	check(err)
+	return i
 }
 
-func computeColumn(str string) int {
-	low := 0.0
-	high := 7.0
-	for _, c := range str {
-		if c == 'L' {
-			high = math.Floor(high - (high-low)/2)
-		} else if c == 'R' {
-			low = math.Ceil(low + (high-low)/2)
-		}
-	}
-	return int(low)
-}
-
-func computeSeatID(ref string) int {
-	r := computeRow(ref[:7])
-	c := computeColumn(ref[7:])
-	return r*8 + c
-}
-
-func solve(seats []int) int {
-	sort.Sort(sort.IntSlice(seats))
+func solve(seats []int64) int64 {
+	sort.Slice(seats, func(i, j int) bool { return seats[i] < seats[j] })
 	for i := 1; i < len(seats); i++ {
 		if seats[i]-1 != seats[i-1] {
 			return seats[i] - 1
@@ -61,7 +40,7 @@ func main() {
 	data, err := ioutil.ReadFile(os.Args[1])
 	check(err)
 	lines := strings.Split(strings.TrimRight(string(data), "\n"), "\n")
-	var seats []int
+	var seats []int64
 	for _, l := range lines {
 		id := computeSeatID(l)
 		seats = append(seats, id)
