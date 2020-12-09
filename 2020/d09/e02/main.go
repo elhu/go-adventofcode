@@ -32,9 +32,7 @@ func buildSums(values []int) []int {
 func getRangeMinMax(values []int) (int, int) {
 	max := values[0]
 	min := values[0]
-	acc := 0
 	for _, v := range values {
-		acc += v
 		if v < min {
 			min = v
 		}
