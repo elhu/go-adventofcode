@@ -20,15 +20,6 @@ func atoi(str string) int {
 	return i
 }
 
-func buildSums(values []int) []int {
-	sums := make([]int, len(values))
-	sums[0] = values[0]
-	for i, v := range values[1:] {
-		sums[i+1] = sums[i] + v
-	}
-	return sums
-}
-
 func getRangeMinMax(values []int) (int, int) {
 	max := values[0]
 	min := values[0]
@@ -44,16 +35,19 @@ func getRangeMinMax(values []int) (int, int) {
 }
 
 func solve(values []int) int {
-	sums := buildSums(values)
-	discarded := 0
-	for i := 0; i < len(values); i++ {
-		for j, v := range sums[i:] {
-			if v-discarded == targetNumber {
-				min, max := getRangeMinMax(values[i : i+j+1])
-				return min + max
-			}
+	left, right := 0, 1
+	currSum := values[0] + values[1]
+	for left < len(values) && right < len(values) {
+		if currSum == targetNumber {
+			min, max := getRangeMinMax(values[left : right+1])
+			return min + max
+		} else if currSum < targetNumber {
+			right++
+			currSum += values[right]
+		} else {
+			currSum -= values[left]
+			left++
 		}
-		discarded += values[i]
 	}
 	return -42
 }
