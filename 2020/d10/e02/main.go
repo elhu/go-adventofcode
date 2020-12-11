@@ -21,8 +21,22 @@ func atoi(str string) int {
 	return i
 }
 
+/*
+Sort the input
+Keep a list of the number of branches at each adapter
+Traverse the adapters, starting from the end.
+At the end, the number of branches is 1 (the device's adapter)
+For each adapter (adapter A):
+* check the next 3 ones in the chain (there's the only ones that could connect), named adapter B:
+* If the adapter A connects adapter B (i.e its value is within +3 of the adapter A):
+	* Add the number of branches of adapter B to adapter A
+
+Keeping going until you get to the first adapter (the charging outlet)
+*/
+
 func solve(adapters []int) int {
 	sort.Slice(adapters, func(i, j int) bool { return adapters[i] < adapters[j] })
+	// Pad the adapters with fake ones to avoid having to check boundary conditions
 	adapters = append(adapters, []int{adapters[len(adapters)-1] + 3, adapters[len(adapters)-1] + 6}...)
 	branches := make([]int, len(adapters))
 	branches[len(branches)-1] = 1
