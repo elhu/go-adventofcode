@@ -85,7 +85,6 @@ func index(list []int, n int) int {
 }
 
 func solve(rules map[string][][]int, tickets [][]int) int {
-	// fmt.Println(rules)
 	// Generate list of potential positions for each rule
 	rulePos := make(map[string][]int)
 	for name, rule := range rules {
