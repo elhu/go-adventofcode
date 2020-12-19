@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"regexp"
-	"strconv"
 	"strings"
 )
 
@@ -15,30 +14,7 @@ func check(e error) {
 	}
 }
 
-func atoi(str string) int {
-	i, err := strconv.Atoi(str)
-	check(err)
-	return i
-}
-
 var baseRuleExp = regexp.MustCompile(`(\d+): "(\w)"`)
-var compositeRuleSplitterExp = regexp.MustCompile(`( \| | )`)
-
-func allPresent(rulesRef map[string]string, rules []string) bool {
-	for _, r := range rules {
-		if _, found := rulesRef[r]; !found {
-			return false
-		}
-	}
-	return true
-}
-
-func buildRule(rulesRef map[string]string, rules []string, rawRule string) string {
-	for _, r := range rules {
-		rawRule = strings.ReplaceAll(rawRule, r, fmt.Sprintf("(%s)", rulesRef[r]))
-	}
-	return strings.ReplaceAll(rawRule, " ", "")
-}
 
 type Rule struct {
 	options [][]string
@@ -52,7 +28,7 @@ func buildRuleGraph(rulesRef map[string]*Rule, root string) {
 			for _, name := range option {
 				buildRuleGraph(rulesRef, name)
 			}
-			// The input only has 1 or two parts to each branch
+			// The input only has 1-2 parts to each branch
 			if len(option) == 1 {
 				cache = append(cache, rulesRef[option[0]].cache...)
 			} else if len(option) == 2 {
