@@ -21,6 +21,20 @@ type Rule struct {
 	cache   []string
 }
 
+func combineArrays(input [][]string) []string {
+	res := []string{""}
+	for _, arr := range input {
+		prod := []string{}
+		for _, i := range arr {
+			for _, r := range res {
+				prod = append(prod, r+i)
+			}
+		}
+		res = prod
+	}
+	return res
+}
+
 func buildRuleGraph(rulesRef map[string]*Rule, root string) {
 	if len(rulesRef[root].cache) == 0 {
 		for _, option := range rulesRef[root].options {
@@ -28,18 +42,11 @@ func buildRuleGraph(rulesRef map[string]*Rule, root string) {
 			for _, name := range option {
 				buildRuleGraph(rulesRef, name)
 			}
-			// The input only has 1-2 parts to each branch
-			if len(option) == 1 {
-				cache = append(cache, rulesRef[option[0]].cache...)
-			} else if len(option) == 2 {
-				for _, lft := range rulesRef[option[0]].cache {
-					for _, rgt := range rulesRef[option[1]].cache {
-						cache = append(cache, fmt.Sprintf("%s%s", lft, rgt))
-					}
-				}
-			} else {
-				panic("Wtf")
+			var nestedOptions [][]string
+			for _, opt := range option {
+				nestedOptions = append(nestedOptions, rulesRef[opt].cache)
 			}
+			cache = append(cache, combineArrays(nestedOptions)...)
 			rulesRef[root].cache = append(rulesRef[root].cache, cache...)
 		}
 	}
