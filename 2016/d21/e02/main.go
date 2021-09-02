@@ -9,18 +9,6 @@ import (
 	"strings"
 )
 
-func check(e error) {
-	if e != nil {
-		panic(e)
-	}
-}
-
-func atoi(str string) int {
-	res, err := strconv.Atoi(str)
-	check(err)
-	return res
-}
-
 // Perm calls f with each permutation of a.
 func Perm(a []byte, f func([]byte)) {
 	perm(a, f, 0)
@@ -38,6 +26,18 @@ func perm(a []byte, f func([]byte), i int) {
 		perm(a, f, i+1)
 		a[i], a[j] = a[j], a[i]
 	}
+}
+
+func check(e error) {
+	if e != nil {
+		panic(e)
+	}
+}
+
+func atoi(str string) int {
+	res, err := strconv.Atoi(str)
+	check(err)
+	return res
 }
 
 func swapPos(pwd []byte, a, b int) []byte {
@@ -140,8 +140,8 @@ func main() {
 		cpy := make([]byte, len(p))
 		copy(cpy, p)
 		out := scramble(input, cpy)
-		// fmt.Println(string(out))
-		if bytes.Equal(out, pwd) {
+		// fmt.Printf("[%s] %s => %s\n", pwd, p, string(out))
+		if bytes.Equal(out, []byte(os.Args[2])) {
 			fmt.Println(string(p))
 			return
 		}
