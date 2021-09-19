@@ -60,9 +60,13 @@ func setupState() State {
 	var floors [4]Floor
 	floors[0].generators = map[string]struct{}{
 		"promethium": {},
+		"elerium": {},
+		"dilithium": {},
 	}
 	floors[0].chips = map[string]struct{}{
 		"promethium": {},
+		"elerium": {},
+		"dilithium": {},
 	}
 	floors[1].generators = map[string]struct{}{
 		"cobalt":    {},
@@ -79,7 +83,7 @@ func setupState() State {
 	return State{0, floors}
 }
 
-var elements = []string{"promethium", "cobalt", "curium", "ruthenium", "plutonium"}
+var elements = []string{"promethium", "cobalt", "curium", "ruthenium", "plutonium", "elerium", "dilithium"}
 
 func isFinished(state State) bool {
 	for _, e := range elements {
