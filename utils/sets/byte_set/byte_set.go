@@ -10,6 +10,20 @@ func New() *ByteSet {
 	return &ByteSet{data: make(map[byte]struct{})}
 }
 
+// Len returns the length of the byte set
+func (s *ByteSet) Len() int {
+	return len(s.data)
+}
+
+// Members returns the list of members in the set as a slice
+func (s *ByteSet) Members() []byte {
+	res := make([]byte, 0, len(s.data))
+	for k := range s.data {
+		res = append(res, k)
+	}
+	return res
+}
+
 // Add adds b to the byteset
 func (s *ByteSet) Add(b byte) {
 	s.data[b] = struct{}{}

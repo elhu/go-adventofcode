@@ -10,6 +10,20 @@ func New() *IntSet {
 	return &IntSet{data: make(map[int]struct{})}
 }
 
+// Len returns the length of the integer set
+func (s *IntSet) Len() int {
+	return len(s.data)
+}
+
+// Members returns the list of members in the set as a slice
+func (s *IntSet) Members() []int {
+	res := make([]int, 0, len(s.data))
+	for k := range s.data {
+		res = append(res, k)
+	}
+	return res
+}
+
 // Add adds b to the integer set
 func (s *IntSet) Add(b int) {
 	s.data[b] = struct{}{}
