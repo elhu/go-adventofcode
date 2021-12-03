@@ -14,11 +14,11 @@ func check(e error) {
 	}
 }
 
-func mostFreq(input []string, pos int) byte {
+func mostFreq(set *string_set.StringSet, pos int) byte {
 	bits := make(map[byte]int)
-	for _, s := range input {
+	set.Each(func(s string) {
 		bits[s[pos]]++
-	}
+	})
 	if bits['0'] > bits['1'] {
 		return '0'
 	}
@@ -31,16 +31,16 @@ func reduce(input []string, cmpFn func(byte, byte) bool) int64 {
 		set.Add(l)
 	}
 	for i := range input[0] {
-		mf := mostFreq(set.Members(), i)
-		for _, l := range input {
+		mf := mostFreq(set, i)
+		set.Each(func(l string) {
 			if cmpFn(l[i], mf) {
 				set.Remove(l)
-				if set.Len() == 1 {
-					n, err := strconv.ParseInt(string(set.Members()[0]), 2, 64)
-					check(err)
-					return n
-				}
 			}
+		})
+		if set.Len() == 1 {
+			n, err := strconv.ParseInt(string(set.Members()[0]), 2, 64)
+			check(err)
+			return n
 		}
 	}
 	panic("WTF")
