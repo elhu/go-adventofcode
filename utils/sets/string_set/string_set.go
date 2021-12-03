@@ -10,6 +10,20 @@ func New() *StringSet {
 	return &StringSet{data: make(map[string]struct{})}
 }
 
+// Len returns the length of the string set
+func (s *StringSet) Len() int {
+	return len(s.data)
+}
+
+// Members returns the list of members in the set as a slice
+func (s *StringSet) Members() []string {
+	res := make([]string, 0, len(s.data))
+	for k := range s.data {
+		res = append(res, k)
+	}
+	return res
+}
+
 // Add adds b to the string set
 func (s *StringSet) Add(b string) {
 	s.data[b] = struct{}{}
