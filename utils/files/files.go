@@ -24,7 +24,7 @@ func ReadFile(filename string) []byte {
 // Errors are considered unrecoverable will crash the program.
 func ReadLinesWithSeparator(filename string, separator string) []string {
 	data := ReadFile(filename)
-	return strings.Split(strings.TrimRight(string(data), separator), separator)
+	return strings.Split(strings.TrimRight(string(data), "\n"), separator)
 }
 
 // ReadLinesWithSeparator reads the entire file, splits it on newlines
