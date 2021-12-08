@@ -10,6 +10,15 @@ func New() *ByteSet {
 	return &ByteSet{data: make(map[byte]struct{})}
 }
 
+// NewFromSlice creates a byte set from a given byte slice
+func NewFromSlice(s []byte) *ByteSet {
+	set := &ByteSet{data: make(map[byte]struct{})}
+	for _, b := range s {
+		set.Add(b)
+	}
+	return set
+}
+
 // Len returns the length of the byte set
 func (s *ByteSet) Len() int {
 	return len(s.data)
@@ -27,6 +36,19 @@ func (s *ByteSet) Members() []byte {
 // Add adds b to the byteset
 func (s *ByteSet) Add(b byte) {
 	s.data[b] = struct{}{}
+}
+
+// Equals returns whether or not o is equal to s
+func (s *ByteSet) Equals(o *ByteSet) bool {
+	if s.Len() != o.Len() {
+		return false
+	}
+	for b := range s.data {
+		if !o.IsMember(b) {
+			return false
+		}
+	}
+	return true
 }
 
 // Remove removes b from the byteset
@@ -47,6 +69,18 @@ func (s *ByteSet) Intersection(o *ByteSet) *ByteSet {
 		if o.IsMember(k) {
 			res.Add(k)
 		}
+	}
+	return res
+}
+
+// Substraction returns a new byte set with the elements of s and minus the elements of o
+func (s *ByteSet) Substract(o *ByteSet) *ByteSet {
+	res := New()
+	for k := range s.data {
+		res.Add(k)
+	}
+	for k := range o.data {
+		res.Remove(k)
 	}
 	return res
 }
