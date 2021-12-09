@@ -3,7 +3,6 @@ package main
 import (
 	"adventofcode/utils/files"
 	"adventofcode/utils/sets/byte_set"
-	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -213,5 +212,4 @@ func main() {
 		segments := mapSegments(input)
 		res += atoi(solve(segments, output))
 	}
-	fmt.Println(res)
 }
