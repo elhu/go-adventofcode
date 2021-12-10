@@ -2,7 +2,7 @@ package main
 
 import (
 	"adventofcode/utils/files"
-	"adventofcode/utils/sets/string_set"
+	"adventofcode/utils/sets/stringset"
 	"fmt"
 	"os"
 	"strconv"
@@ -14,7 +14,7 @@ func check(e error) {
 	}
 }
 
-func mostFreq(set *string_set.StringSet, pos int) byte {
+func mostFreq(set *stringset.StringSet, pos int) byte {
 	bits := make(map[byte]int)
 	set.Each(func(s string) {
 		bits[s[pos]]++
@@ -26,7 +26,7 @@ func mostFreq(set *string_set.StringSet, pos int) byte {
 }
 
 func reduce(input []string, cmpFn func(byte, byte) bool) int64 {
-	set := string_set.New()
+	set := stringset.New()
 	for _, l := range input {
 		set.Add(l)
 	}

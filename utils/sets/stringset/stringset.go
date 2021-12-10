@@ -1,4 +1,4 @@
-package string_set
+package stringset
 
 // StringSet implements common methods for a set of strings
 type StringSet struct {
@@ -8,6 +8,15 @@ type StringSet struct {
 // New creates an empty string set
 func New() *StringSet {
 	return &StringSet{data: make(map[string]struct{})}
+}
+
+// NewFromSlice creates a string set from a given string slice
+func NewFromSlice(s []string) *StringSet {
+	set := &StringSet{data: make(map[string]struct{})}
+	for _, b := range s {
+		set.Add(b)
+	}
+	return set
 }
 
 // Len returns the length of the string set
@@ -34,8 +43,8 @@ func (s *StringSet) Remove(b string) {
 	delete(s.data, b)
 }
 
-// IsMember returns true if b is present in the string set, false otherwise
-func (s *StringSet) IsMember(b string) bool {
+// HasMember returns true if b is present in the string set, false otherwise
+func (s *StringSet) HasMember(b string) bool {
 	_, found := s.data[b]
 	return found
 }
@@ -44,9 +53,21 @@ func (s *StringSet) IsMember(b string) bool {
 func (s *StringSet) Intersection(o *StringSet) *StringSet {
 	res := New()
 	for k := range s.data {
-		if o.IsMember(k) {
+		if o.HasMember(k) {
 			res.Add(k)
 		}
+	}
+	return res
+}
+
+// Substraction returns a new string set with the elements of s and minus the elements of o
+func (s *StringSet) Substract(o *StringSet) *StringSet {
+	res := New()
+	for k := range s.data {
+		res.Add(k)
+	}
+	for k := range o.data {
+		res.Remove(k)
 	}
 	return res
 }

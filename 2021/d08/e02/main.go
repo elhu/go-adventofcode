@@ -2,7 +2,7 @@ package main
 
 import (
 	"adventofcode/utils/files"
-	"adventofcode/utils/sets/byte_set"
+	"adventofcode/utils/sets/byteset"
 	"os"
 	"strconv"
 	"strings"
@@ -26,17 +26,17 @@ import (
 // .    f  e    f  .    f  e    f  .    f
 //  gggg    gggg    ....    gggg    gggg
 
-var digits = map[int]*byte_set.ByteSet{
-	1: byte_set.NewFromSlice([]byte{'c', 'f'}),
-	7: byte_set.NewFromSlice([]byte{'a', 'c', 'f'}),
-	4: byte_set.NewFromSlice([]byte{'b', 'c', 'd', 'f'}),
-	2: byte_set.NewFromSlice([]byte{'a', 'c', 'd', 'e', 'g'}),
-	3: byte_set.NewFromSlice([]byte{'a', 'c', 'd', 'f', 'g'}),
-	5: byte_set.NewFromSlice([]byte{'a', 'b', 'd', 'f', 'g'}),
-	0: byte_set.NewFromSlice([]byte{'a', 'b', 'c', 'e', 'f', 'g'}),
-	6: byte_set.NewFromSlice([]byte{'a', 'b', 'd', 'e', 'f', 'g'}),
-	9: byte_set.NewFromSlice([]byte{'a', 'b', 'c', 'd', 'f', 'g'}),
-	8: byte_set.NewFromSlice([]byte{'a', 'b', 'c', 'd', 'e', 'f', 'g'}),
+var digits = map[int]*byteset.ByteSet{
+	1: byteset.NewFromSlice([]byte{'c', 'f'}),
+	7: byteset.NewFromSlice([]byte{'a', 'c', 'f'}),
+	4: byteset.NewFromSlice([]byte{'b', 'c', 'd', 'f'}),
+	2: byteset.NewFromSlice([]byte{'a', 'c', 'd', 'e', 'g'}),
+	3: byteset.NewFromSlice([]byte{'a', 'c', 'd', 'f', 'g'}),
+	5: byteset.NewFromSlice([]byte{'a', 'b', 'd', 'f', 'g'}),
+	0: byteset.NewFromSlice([]byte{'a', 'b', 'c', 'e', 'f', 'g'}),
+	6: byteset.NewFromSlice([]byte{'a', 'b', 'd', 'e', 'f', 'g'}),
+	9: byteset.NewFromSlice([]byte{'a', 'b', 'c', 'd', 'f', 'g'}),
+	8: byteset.NewFromSlice([]byte{'a', 'b', 'c', 'd', 'e', 'f', 'g'}),
 }
 
 // c = member of 1 that is not a member of one of 0, 6, 9
@@ -48,12 +48,12 @@ var digits = map[int]*byte_set.ByteSet{
 // e = byte from 8 that is not any of the other segment
 
 // c = member of 1 that is not a member of one of 0, 6, 9
-func findC(mapping map[byte]byte, candidates map[int][]*byte_set.ByteSet) byte {
+func findC(mapping map[byte]byte, candidates map[int][]*byteset.ByteSet) byte {
 	var res byte
 	candidates[1][0].Each(func(b byte) {
 		matches := 0
 		for _, c := range candidates[0] {
-			if c.IsMember(b) {
+			if c.HasMember(b) {
 				matches++
 			}
 		}
@@ -65,7 +65,7 @@ func findC(mapping map[byte]byte, candidates map[int][]*byte_set.ByteSet) byte {
 }
 
 // f = byte from 1 that is not c
-func findF(mapping map[byte]byte, candidates map[int][]*byte_set.ByteSet) byte {
+func findF(mapping map[byte]byte, candidates map[int][]*byteset.ByteSet) byte {
 	var res byte
 	candidates[1][0].Each(func(b byte) {
 		if b != mapping['c'] {
@@ -76,12 +76,12 @@ func findF(mapping map[byte]byte, candidates map[int][]*byte_set.ByteSet) byte {
 }
 
 // a = byte from 7 that is not in 1
-func findA(mapping map[byte]byte, candidates map[int][]*byte_set.ByteSet) byte {
+func findA(mapping map[byte]byte, candidates map[int][]*byteset.ByteSet) byte {
 	return candidates[7][0].Substract(candidates[1][0]).Members()[0]
 }
 
 // g = byte that is in 2, 3, 5, 0, 6, 9 and is not in 7
-func findG(mapping map[byte]byte, candidates map[int][]*byte_set.ByteSet) byte {
+func findG(mapping map[byte]byte, candidates map[int][]*byteset.ByteSet) byte {
 	baseSet := candidates[2][0]
 	for _, c := range candidates[2] {
 		baseSet = baseSet.Intersection(c)
@@ -93,7 +93,7 @@ func findG(mapping map[byte]byte, candidates map[int][]*byte_set.ByteSet) byte {
 }
 
 // d = byte that is in 2, 3, 5 and is not a or g
-func findD(mapping map[byte]byte, candidates map[int][]*byte_set.ByteSet) byte {
+func findD(mapping map[byte]byte, candidates map[int][]*byteset.ByteSet) byte {
 	baseSet := candidates[2][0]
 	for _, c := range candidates[2] {
 		baseSet = baseSet.Intersection(c)
@@ -108,7 +108,7 @@ func findD(mapping map[byte]byte, candidates map[int][]*byte_set.ByteSet) byte {
 }
 
 // b = byte in 4 that is not b, d or f
-func findB(mapping map[byte]byte, candidates map[int][]*byte_set.ByteSet) byte {
+func findB(mapping map[byte]byte, candidates map[int][]*byteset.ByteSet) byte {
 	var res byte
 	candidates[4][0].Each(func(c byte) {
 		if c != mapping['c'] && c != mapping['d'] && c != mapping['f'] {
@@ -119,7 +119,7 @@ func findB(mapping map[byte]byte, candidates map[int][]*byte_set.ByteSet) byte {
 }
 
 // e = byte from 8 that is not yet defined
-func findE(mapping map[byte]byte, candidates map[int][]*byte_set.ByteSet) byte {
+func findE(mapping map[byte]byte, candidates map[int][]*byteset.ByteSet) byte {
 	var res byte
 	reverseMap := make(map[byte]byte)
 	for k, v := range mapping {
@@ -133,9 +133,9 @@ func findE(mapping map[byte]byte, candidates map[int][]*byte_set.ByteSet) byte {
 	return res
 }
 
-func mapSegments(input []*byte_set.ByteSet) map[byte]byte {
+func mapSegments(input []*byteset.ByteSet) map[byte]byte {
 	res := make(map[byte]byte)
-	candidates := make(map[int][]*byte_set.ByteSet)
+	candidates := make(map[int][]*byteset.ByteSet)
 	for _, in := range input {
 		if in.Len() == digits[1].Len() {
 			candidates[1] = append(candidates[1], in)
@@ -161,14 +161,14 @@ func mapSegments(input []*byte_set.ByteSet) map[byte]byte {
 	return res
 }
 
-func solve(mapping map[byte]byte, output []*byte_set.ByteSet) []byte {
+func solve(mapping map[byte]byte, output []*byteset.ByteSet) []byte {
 	var res []byte
 	reverseMap := make(map[byte]byte)
 	for k, v := range mapping {
 		reverseMap[v] = k
 	}
 	for _, out := range output {
-		set := byte_set.New()
+		set := byteset.New()
 		out.Each(func(b byte) {
 			set.Add(reverseMap[b])
 		})
@@ -181,16 +181,16 @@ func solve(mapping map[byte]byte, output []*byte_set.ByteSet) []byte {
 	return res
 }
 
-func parse(line string) ([]*byte_set.ByteSet, []*byte_set.ByteSet) {
-	var input []*byte_set.ByteSet
-	var output []*byte_set.ByteSet
+func parse(line string) ([]*byteset.ByteSet, []*byteset.ByteSet) {
+	var input []*byteset.ByteSet
+	var output []*byteset.ByteSet
 
 	parts := strings.Fields(line)
 	for _, p := range parts[0:10] {
-		input = append(input, byte_set.NewFromSlice([]byte(p)))
+		input = append(input, byteset.NewFromSlice([]byte(p)))
 	}
 	for _, p := range parts[11:] {
-		output = append(output, byte_set.NewFromSlice([]byte(p)))
+		output = append(output, byteset.NewFromSlice([]byte(p)))
 	}
 
 	return input, output

@@ -1,4 +1,4 @@
-package byte_set
+package byteset
 
 // ByteSet implements common methods for a set of bytes
 type ByteSet struct {
@@ -44,7 +44,7 @@ func (s *ByteSet) Equals(o *ByteSet) bool {
 		return false
 	}
 	for b := range s.data {
-		if !o.IsMember(b) {
+		if !o.HasMember(b) {
 			return false
 		}
 	}
@@ -56,8 +56,8 @@ func (s *ByteSet) Remove(b byte) {
 	delete(s.data, b)
 }
 
-// IsMember returns true if b is present in the byteset, false otherwise
-func (s *ByteSet) IsMember(b byte) bool {
+// HasMember returns true if b is present in the byteset, false otherwise
+func (s *ByteSet) HasMember(b byte) bool {
 	_, found := s.data[b]
 	return found
 }
@@ -66,7 +66,7 @@ func (s *ByteSet) IsMember(b byte) bool {
 func (s *ByteSet) Intersection(o *ByteSet) *ByteSet {
 	res := New()
 	for k := range s.data {
-		if o.IsMember(k) {
+		if o.HasMember(k) {
 			res.Add(k)
 		}
 	}

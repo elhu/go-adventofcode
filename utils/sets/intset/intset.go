@@ -1,4 +1,4 @@
-package int_set
+package intset
 
 // IntSet implements common methods for a set of integers
 type IntSet struct {
@@ -8,6 +8,15 @@ type IntSet struct {
 // New creates an empty integer set
 func New() *IntSet {
 	return &IntSet{data: make(map[int]struct{})}
+}
+
+// NewFromSlice creates an int set from a given int slice
+func NewFromSlice(s []int) *IntSet {
+	set := &IntSet{data: make(map[int]struct{})}
+	for _, b := range s {
+		set.Add(b)
+	}
+	return set
 }
 
 // Len returns the length of the integer set
@@ -34,8 +43,8 @@ func (s *IntSet) Remove(b int) {
 	delete(s.data, b)
 }
 
-// IsMember returns true if b is present in the integer set, false otherwise
-func (s *IntSet) IsMember(b int) bool {
+// HasMember returns true if b is present in the integer set, false otherwise
+func (s *IntSet) HasMember(b int) bool {
 	_, found := s.data[b]
 	return found
 }
@@ -44,9 +53,21 @@ func (s *IntSet) IsMember(b int) bool {
 func (s *IntSet) Intersection(o *IntSet) *IntSet {
 	res := New()
 	for k := range s.data {
-		if o.IsMember(k) {
+		if o.HasMember(k) {
 			res.Add(k)
 		}
+	}
+	return res
+}
+
+// Substraction returns a new int set with the elements of s and minus the elements of o
+func (s *IntSet) Substract(o *IntSet) *IntSet {
+	res := New()
+	for k := range s.data {
+		res.Add(k)
+	}
+	for k := range o.data {
+		res.Remove(k)
 	}
 	return res
 }
