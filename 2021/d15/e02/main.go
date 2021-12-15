@@ -1,7 +1,6 @@
 package main
 
 import (
-	"adventofcode/utils/coords/coords2d"
 	"adventofcode/utils/files"
 	"container/heap"
 	"fmt"
@@ -35,22 +34,6 @@ func (h *KeyHeap) Pop() interface{} {
 	return x
 }
 
-type Edge struct {
-	Cost int
-	Node *Node
-}
-
-type Node struct {
-	Coords coords2d.Coords2d
-	Value  int
-	Key    int
-	Edges  []*Edge
-}
-
-func coordsToKey(c coords2d.Coords2d) int {
-	return c.Y*10000000 + c.X
-}
-
 func expandMap(data []string) [][]int {
 	res := make([][]int, len(data)*5)
 	for i := 0; i < len(data)*5; i++ {
@@ -72,65 +55,47 @@ func expandMap(data []string) [][]int {
 	return res
 }
 
-func parseMap(data []string) map[int]*Node {
-	expandedMap := expandMap(data)
-	nodes := make(map[int]*Node)
-	for i, l := range expandedMap {
-		for j, c := range l {
-			coord := coords2d.Coords2d{X: j, Y: i}
-			key := coordsToKey(coord)
-			nodes[key] = &Node{Coords: coord, Value: c, Key: key}
-		}
-	}
-	for i, l := range expandedMap {
-		for j, c := range l {
-			currentNode := nodes[coordsToKey(coords2d.Coords2d{X: j, Y: i})]
-			neighbors := []coords2d.Coords2d{
-				{X: j, Y: i - 1},
-				{X: j, Y: i + 1},
-				{X: j - 1, Y: i},
-				{X: j + 1, Y: i},
-			}
-			for _, coord := range neighbors {
-				if node, exists := nodes[coordsToKey(coord)]; exists {
-					node.Edges = append(node.Edges, &Edge{Cost: c, Node: currentNode})
-				}
-			}
-		}
-	}
-	return nodes
-}
-
 const MAXINT = 2147483647
 
-func solve(nodes map[int]*Node, startKey, endKey int) int {
-	start := nodes[startKey]
-	end := nodes[endKey]
+func toKey(x, y int) int {
+	return y*1000000 + x
+}
 
+func fromKey(k int) (int, int) {
+	y := k / 1000000
+	return k - y*1000000, y
+}
+
+func solve(data [][]int) int {
 	var open KeyHeap
+	startKey := toKey(0, 0)
 	heap.Init(&open)
-	heap.Push(&open, [2]int{startKey, start.Value})
-	cameFrom := make(map[int]int)
+	heap.Push(&open, [2]int{startKey, data[0][0]})
 	gScore := make(map[int]int)
 	gScore[startKey] = 0
 
 	for open.Len() != 0 {
 		currKey := heap.Pop(&open).([2]int)[0]
-		curr := nodes[currKey]
+		x, y := fromKey(currKey)
 		evaluatedNodes++
-		if curr == end {
-			return gScore[endKey]
+		if x == len(data)-1 && y == len(data)-1 {
+			return gScore[currKey]
 		}
-		for _, e := range curr.Edges {
-			eKey := e.Node.Key
-			tempGScore := gScore[currKey] + e.Cost
+		neighbors := [][2]int{{x, y - 1}, {x, y + 1}, {x - 1, y}, {x + 1, y}}
+
+		for _, n := range neighbors {
+			i, j := n[0], n[1]
+			if i < 0 || i >= len(data) || j < 0 || j >= len(data) {
+				continue
+			}
+			eKey := toKey(i, j)
+			tempGScore := gScore[currKey] + data[i][j]
 			edgeGScore := MAXINT
 			if s, found := gScore[eKey]; found {
 				edgeGScore = s
 			}
 			if tempGScore < edgeGScore {
 				gScore[eKey] = tempGScore
-				cameFrom[eKey] = currKey
 				heap.Push(&open, [2]int{eKey, tempGScore})
 			}
 		}
@@ -143,13 +108,7 @@ var evaluatedNodes = 0
 func main() {
 	start := time.Now()
 	data := files.ReadLines(os.Args[1])
-	nodes := parseMap(data)
-	fmt.Printf("Map expansion & parsing took %s\n", time.Since(start))
-	fmt.Println(solve(
-		nodes,
-		coordsToKey(coords2d.Coords2d{X: 0, Y: 0}),
-		coordsToKey(coords2d.Coords2d{X: len(data)*5 - 1, Y: len(data)*5 - 1}),
-	),
-	)
+	expandedMap := expandMap(data)
+	fmt.Println(solve(expandedMap))
 	fmt.Printf("Took: %s, visited %d nodes", time.Since(start), evaluatedNodes)
 }
