@@ -13,11 +13,11 @@ func posInTarget(pos coords2d.Coords2d, xmin, xmax, ymin, ymax int) bool {
 
 func solve(xmin, xmax, ymin, ymax int) int {
 	hits := 0
-	for y := ymin * 10; y < 100; y++ {
-		for x := 1; x < xmax*10; x++ {
+	for y := ymin; y < 100; y++ {
+		for x := 1; x < xmax*2; x++ {
 			pos := coords2d.Coords2d{X: 0, Y: 0}
 			velocity := coords2d.Coords2d{X: x, Y: y}
-			for i := 0; i < 1000; i++ {
+			for i := 0; i < 200; i++ {
 				pos = coords2d.Add(pos, velocity)
 				if posInTarget(pos, xmin, xmax, ymin, ymax) {
 					hits++
