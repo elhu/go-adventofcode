@@ -12,31 +12,22 @@ func vector(a, b coords3d.Coords3d) string {
 	return fmt.Sprintf("%d:%d:%d", b.X-a.X, b.Y-a.Y, b.Z-a.Z)
 }
 
-func vectors(coords []coords3d.Coords3d) map[string]int {
-	res := make(map[string]int)
+func buildVectors(coords []coords3d.Coords3d) map[string][]coords3d.Coords3d {
+	res := make(map[string][]coords3d.Coords3d)
 	for i := range coords {
 		for _, c := range coords[i+1:] {
-			res[vector(coords[i], c)]++
-			res[vector(c, coords[i])]++
+			res[vector(coords[i], c)] = []coords3d.Coords3d{coords[i], c}
+			res[vector(c, coords[i])] = []coords3d.Coords3d{c, coords[i]}
 		}
 	}
 	return res
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func matchingVectors(a, b []coords3d.Coords3d) map[string]int {
-	vectorsA := vectors(a)
-	vectorsB := vectors(b)
-	res := make(map[string]int)
-	for ka := range vectorsA {
-		if vb, found := vectorsB[ka]; found {
-			res[ka] = min(vectorsA[ka], vb)
+func matchingVectors(a, b map[string][]coords3d.Coords3d) map[string]struct{} {
+	res := make(map[string]struct{})
+	for ka := range a {
+		if _, found := b[ka]; found {
+			res[ka] = struct{}{}
 		}
 	}
 	return res
@@ -93,19 +84,7 @@ func parse(data []string) [][][]coords3d.Coords3d {
 	return scanners
 }
 
-func relativePosition(ref, coords []coords3d.Coords3d) coords3d.Coords3d {
-	refVecs := make(map[string][]coords3d.Coords3d)
-	for i, c1 := range ref {
-		for _, c2 := range ref[i+1:] {
-			refVecs[vector(c1, c2)] = []coords3d.Coords3d{c1, c2}
-		}
-	}
-	cVecs := make(map[string][]coords3d.Coords3d)
-	for i, c1 := range coords {
-		for _, c2 := range coords[i+1:] {
-			cVecs[vector(c1, c2)] = []coords3d.Coords3d{c1, c2}
-		}
-	}
+func relativePosition(refVecs, cVecs map[string][]coords3d.Coords3d) coords3d.Coords3d {
 	for kref, vref := range refVecs {
 		if vcoord, found := cVecs[kref]; found {
 			return coords3d.Coords3d{X: vref[0].X - vcoord[0].X, Y: vref[0].Y - vcoord[0].Y, Z: vref[0].Z - vcoord[0].Z}
@@ -129,10 +108,16 @@ func maxDistance(positions map[int]coords3d.Coords3d) int {
 func solve(scanners [][][]coords3d.Coords3d) int {
 	orientations := map[int]int{0: 0}
 	positions := map[int]coords3d.Coords3d{0: {X: 0, Y: 0, Z: 0}}
+	vectors := make([][]map[string][]coords3d.Coords3d, len(scanners))
+	for i := 0; i < len(scanners); i++ {
+		vectors[i] = make([]map[string][]coords3d.Coords3d, len(scanners[i]))
+		for j := 0; j < len(scanners[i]); j++ {
+			vectors[i][j] = buildVectors(scanners[i][j])
+		}
+	}
 
 	for len(orientations) < len(scanners) {
 		for i := range orientations {
-			sa := scanners[i]
 			for j := 0; j < len(scanners); j++ {
 				sb := scanners[j]
 				oriA, foundA := orientations[i]
@@ -140,10 +125,10 @@ func solve(scanners [][][]coords3d.Coords3d) int {
 				if i == j || !foundA || foundB {
 					continue
 				}
-				for oriId, ori := range sb {
-					mv := matchingVectors(sa[oriA], ori)
+				for oriId := range sb {
+					mv := matchingVectors(vectors[i][oriA], vectors[j][oriId])
 					if len(mv) >= 24 {
-						rp := relativePosition(sa[oriA], ori)
+						rp := relativePosition(vectors[i][oriA], vectors[j][oriId])
 						positions[j] = coords3d.Add(rp, positions[i])
 						orientations[j] = oriId
 						break
