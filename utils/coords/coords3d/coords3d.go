@@ -1,4 +1,4 @@
-package coords2d
+package coords3d
 
 // Coords3d represents coordinates in 3 dimensions
 type Coords3d struct {
