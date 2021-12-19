@@ -6,14 +6,28 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 )
 
-func vector(a, b coords3d.Coords3d) string {
-	return fmt.Sprintf("%d:%d:%d", b.X-a.X, b.Y-a.Y, b.Z-a.Z)
+func hash2(a, b int) int {
+	return (a+b)*(a+b+1) + b
 }
 
-func buildVectors(coords []coords3d.Coords3d) map[string][]coords3d.Coords3d {
-	res := make(map[string][]coords3d.Coords3d)
+func hash3(a, b, c int) int {
+	return (hash2(a, b)+c)*(hash2(a, b)+c+1) + c
+}
+
+// Cantor pairing function for hash
+func hash(c coords3d.Coords3d) int {
+	return hash3(c.X, c.Y, c.Z)
+}
+
+func vector(a, b coords3d.Coords3d) int {
+	return hash3(b.X-a.X, b.Y-a.Y, b.Z-a.Z)
+}
+
+func buildVectors(coords []coords3d.Coords3d) map[int][]coords3d.Coords3d {
+	res := make(map[int][]coords3d.Coords3d)
 	for i := range coords {
 		for _, c := range coords[i+1:] {
 			res[vector(coords[i], c)] = []coords3d.Coords3d{coords[i], c}
@@ -23,8 +37,8 @@ func buildVectors(coords []coords3d.Coords3d) map[string][]coords3d.Coords3d {
 	return res
 }
 
-func matchingVectors(a, b map[string][]coords3d.Coords3d) map[string]struct{} {
-	res := make(map[string]struct{})
+func matchingVectors(a, b map[int][]coords3d.Coords3d) map[int]struct{} {
+	res := make(map[int]struct{})
 	for ka := range a {
 		if _, found := b[ka]; found {
 			res[ka] = struct{}{}
@@ -84,7 +98,7 @@ func parse(data []string) [][][]coords3d.Coords3d {
 	return scanners
 }
 
-func relativePosition(refVecs, cVecs map[string][]coords3d.Coords3d) coords3d.Coords3d {
+func relativePosition(refVecs, cVecs map[int][]coords3d.Coords3d) coords3d.Coords3d {
 	for kref, vref := range refVecs {
 		if vcoord, found := cVecs[kref]; found {
 			return coords3d.Coords3d{X: vref[0].X - vcoord[0].X, Y: vref[0].Y - vcoord[0].Y, Z: vref[0].Z - vcoord[0].Z}
@@ -107,9 +121,9 @@ func countBeacons(orientations map[int]int, positions map[int]coords3d.Coords3d,
 func solve(scanners [][][]coords3d.Coords3d) int {
 	orientations := map[int]int{0: 0}
 	positions := map[int]coords3d.Coords3d{0: {X: 0, Y: 0, Z: 0}}
-	vectors := make([][]map[string][]coords3d.Coords3d, len(scanners))
+	vectors := make([][]map[int][]coords3d.Coords3d, len(scanners))
 	for i := 0; i < len(scanners); i++ {
-		vectors[i] = make([]map[string][]coords3d.Coords3d, len(scanners[i]))
+		vectors[i] = make([]map[int][]coords3d.Coords3d, len(scanners[i]))
 		for j := 0; j < len(scanners[i]); j++ {
 			vectors[i][j] = buildVectors(scanners[i][j])
 		}
@@ -140,7 +154,9 @@ func solve(scanners [][][]coords3d.Coords3d) int {
 }
 
 func main() {
+	s := time.Now()
 	data := files.ReadLines(os.Args[1])
 	scanners := parse(data)
 	fmt.Println(solve(scanners))
+	fmt.Println(time.Since(s))
 }
