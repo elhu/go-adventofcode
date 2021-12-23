@@ -39,6 +39,7 @@ func (h *KeyHeap) Pop() interface{} {
 type Edge struct {
 	Node     *Node
 	Distance int
+	Path     []string
 }
 
 const (
@@ -51,27 +52,19 @@ type Node struct {
 	Neighbors []*Edge
 	Code      string
 	Allowed   byte
-	// Occupant  *Amphipod
 }
 
 type Amphipod struct {
 	Kind     byte
 	Cost     int
 	Position *Node
-	Moving   bool
 }
-
-// type State struct {
-// 	Pods []Amphipod
-// 	From []State
-// 	Cost int
-// }
 
 type State []Amphipod
 
-func connect(a, b *Node, dist int) {
-	a.Neighbors = append(a.Neighbors, &Edge{Node: b, Distance: dist})
-	b.Neighbors = append(b.Neighbors, &Edge{Node: a, Distance: dist})
+func connect(a, b *Node, path []string) {
+	a.Neighbors = append(a.Neighbors, &Edge{Node: b, Distance: len(path) + 1, Path: path})
+	b.Neighbors = append(b.Neighbors, &Edge{Node: a, Distance: len(path) + 1, Path: path})
 }
 
 //   #############
@@ -100,39 +93,13 @@ func createGraph() map[string]*Node {
 		nodes[newNodeC.Code] = newNodeC
 		nodes[newNodeD.Code] = newNodeD
 	}
-	// Connect it all
-	connect(nodes["RD2"], nodes["RC2"], 1)
-	connect(nodes["RC2"], nodes["RB2"], 1)
-	connect(nodes["RB2"], nodes["RA2"], 1)
-	connect(nodes["RD4"], nodes["RC4"], 1)
-	connect(nodes["RC4"], nodes["RB4"], 1)
-	connect(nodes["RB4"], nodes["RA4"], 1)
-	connect(nodes["RD6"], nodes["RC6"], 1)
-	connect(nodes["RC6"], nodes["RB6"], 1)
-	connect(nodes["RB6"], nodes["RA6"], 1)
-	connect(nodes["RD8"], nodes["RC8"], 1)
-	connect(nodes["RC8"], nodes["RB8"], 1)
-	connect(nodes["RB8"], nodes["RA8"], 1)
-
-	connect(nodes["H0"], nodes["H1"], 1)
-	connect(nodes["H1"], nodes["RA2"], 2)
-	connect(nodes["H1"], nodes["H3"], 2)
-	connect(nodes["H3"], nodes["RA2"], 2)
-	connect(nodes["H3"], nodes["RA4"], 2)
-	connect(nodes["H3"], nodes["H5"], 2)
-	connect(nodes["H5"], nodes["RA4"], 2)
-	connect(nodes["H5"], nodes["RA6"], 2)
-	connect(nodes["H5"], nodes["H7"], 2)
-	connect(nodes["H7"], nodes["RA6"], 2)
-	connect(nodes["H7"], nodes["RA8"], 2)
-	connect(nodes["H7"], nodes["H9"], 2)
-	connect(nodes["H9"], nodes["RA8"], 2)
-	connect(nodes["H9"], nodes["H10"], 1)
-
-	// // Connect it all better
-	// destinations
-	// connect(nodes["RD2"], )
-
+	for _, move := range files.ReadLines("legalmoves.txt") {
+		parts := strings.Split(move, " ")
+		source := nodes[parts[0]]
+		destination := nodes[parts[1]]
+		path := parts[2:]
+		connect(source, destination, path)
+	}
 	return nodes
 }
 
@@ -163,7 +130,7 @@ func (s State) CopyState() State {
 func (s State) Serialize() string {
 	var res []string
 	for _, a := range s {
-		res = append(res, fmt.Sprintf("%s%c%v", a.Position.Code, a.Kind, a.Moving))
+		res = append(res, fmt.Sprintf("%s:%c", a.Position.Code, a.Kind))
 	}
 	sort.Sort(sort.StringSlice(res))
 	return strings.Join(res, "|")
@@ -183,14 +150,14 @@ func isFree(node *Node, state State) bool {
 	return true
 }
 
-func otherPodsStopped(state State) bool {
-	for _, p := range state {
-		if p.Position.Kind == HALLWAY && !p.Moving {
-			return true
-		}
-	}
-	return false
-}
+// func otherPodsStopped(state State) bool {
+// 	for _, p := range state {
+// 		if p.Position.Kind == HALLWAY && !p.Moving {
+// 			return true
+// 		}
+// 	}
+// 	return false
+// }
 
 func allowedDestination(pod Amphipod, to *Node) bool {
 	// If destination is a hallway, it's always allowed
@@ -205,49 +172,29 @@ func allowedDestination(pod Amphipod, to *Node) bool {
 	return pod.Position.Kind == HALLWAY && pod.Kind == to.Allowed
 }
 
+func isReachable(path []string, state State) bool {
+	for _, n := range path {
+		for _, p := range state {
+			if p.Position.Code == n {
+				return false
+			}
+		}
+	}
+	return true
+}
+
 func potentialMoves(state State, nodes map[string]*Node) []MoveCost {
 	var res []MoveCost
 	var newState State
 	// if a pod is moving, only this one can move
 	for i, p := range state {
-		if p.Moving {
-			for _, n := range p.Position.Neighbors {
-				if isFree(n.Node, state) {
-					// Append new position with pod stopped if it's a destination or no other pod is stopped on the hallway
-					if (n.Node.Kind == DESTINATION && allowedDestination(p, n.Node)) || !otherPodsStopped(state) {
-						newState = state.CopyState()
-						newState[i].Position = n.Node
-						newState[i].Moving = false
-						res = append(res, MoveCost{Cost: n.Distance * p.Cost, Move: newState})
-					}
-					// If new position is hallway, also append new state with pod moving
-					if n.Node.Kind == HALLWAY {
-						newState = state.CopyState()
-						newState[i].Position = n.Node
-						newState[i].Moving = true
-						res = append(res, MoveCost{Cost: n.Distance * p.Cost, Move: newState})
-					}
-				}
-			}
-			return res
-		}
-	}
-	// if no pod is moving, move them all in all directions
-	for i, p := range state {
 		for _, n := range p.Position.Neighbors {
-			if isFree(n.Node, state) {
-				if !allowedDestination(p, p.Position) || allowedDestination(p, n.Node) {
+			if isFree(n.Node, state) && isReachable(n.Path, state) {
+				// Append new position with pod stopped if it's a destination or no other pod is stopped on the hallway
+				if allowedDestination(p, n.Node) {
 					newState = state.CopyState()
 					newState[i].Position = n.Node
-					newState[i].Moving = false
 					res = append(res, MoveCost{Cost: n.Distance * p.Cost, Move: newState})
-					// if destination is a hallway, also enqueue it as moving
-					if n.Node.Kind == HALLWAY {
-						newState = state.CopyState()
-						newState[i].Position = n.Node
-						newState[i].Moving = true
-						res = append(res, MoveCost{Cost: n.Distance * p.Cost, Move: newState})
-					}
 				}
 			}
 		}
