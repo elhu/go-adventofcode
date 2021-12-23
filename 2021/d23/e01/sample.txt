@@ -3,3 +3,7 @@
 ###B#C#B#D###
   #A#D#C#A#
   #########
+<<<<<<< HEAD
+=======
+
+>>>>>>> 0092f18 (Limit number of legal moves)

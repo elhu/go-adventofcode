@@ -74,15 +74,15 @@ func main() {
 	connect(hs[6], r6s[0])
 	connect(hs[8], r8s[0])
 
-	for i, r := range rs {
-		for _, or := range rs[i+1:] {
-			for _, n := range r {
-				for _, on := range or {
-					bfs(n, on)
-				}
-			}
-		}
-	}
+	// for i, r := range rs {
+	// 	for _, or := range rs[i+1:] {
+	// 		for _, n := range r {
+	// 			for _, on := range or {
+	// 				bfs(n, on)
+	// 			}
+	// 		}
+	// 	}
+	// }
 	allowedHs := []*Node{hs[0], hs[1], hs[3], hs[5], hs[7], hs[9], hs[10]}
 	for _, r := range rs {
 		for _, n := range r {

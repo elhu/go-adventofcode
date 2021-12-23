@@ -112,7 +112,6 @@ func placeAmphipods(nodes map[string]*Node, data []string) []Amphipod {
 			a := Amphipod{Kind: data[j][i], Cost: costs[data[j][i]]}
 			n := nodes[fmt.Sprintf("R%c%d", depths[j], i-1)]
 			a.Position = n
-			// n.Occupant = a
 			pods = append(pods, a)
 		}
 	}
@@ -150,23 +149,14 @@ func isFree(node *Node, state State) bool {
 	return true
 }
 
-// func otherPodsStopped(state State) bool {
-// 	for _, p := range state {
-// 		if p.Position.Kind == HALLWAY && !p.Moving {
-// 			return true
-// 		}
-// 	}
-// 	return false
-// }
-
 func allowedDestination(pod Amphipod, to *Node) bool {
 	// If destination is a hallway, it's always allowed
 	if to.Kind == HALLWAY {
 		return true
 	}
-	// If pod was in the wrong room, it can always move
+	// If pod was in the wrong room, it can move if the target is the right kind of room
 	if pod.Position.Kind == DESTINATION && pod.Position.Allowed != pod.Kind {
-		return true
+		return to.Allowed == pod.Kind
 	}
 	// If pod was in hallway and enters its destination room, it's allowed
 	return pod.Position.Kind == HALLWAY && pod.Kind == to.Allowed
@@ -183,23 +173,77 @@ func isReachable(path []string, state State) bool {
 	return true
 }
 
+func podAt(pos string, state State) (Amphipod, bool) {
+	for _, p := range state {
+		if p.Position.Code == pos {
+			return p, true
+		}
+	}
+	return state[0], false
+}
+
+var rows = []string{"RA", "RB", "RC", "RD"}
+
+func containsWrongPods(node *Node, state State) bool {
+	if node.Kind == HALLWAY {
+		return false
+	}
+	col := node.Code[2]
+	for _, r := range rows {
+		if a, b := podAt(fmt.Sprintf("%s%c", col, r), state); b && a.Kind != node.Allowed {
+			return true
+		}
+	}
+	return false
+}
+
+func isOptimallyPlaced(p Amphipod, state State) bool {
+	if p.Position.Kind == HALLWAY || p.Position.Allowed != p.Kind {
+		return false
+	}
+	// If anything below is not in the right place, allow move
+	row, col := p.Position.Code[0:2], p.Position.Code[2]
+	found := false
+	for _, r := range rows {
+		if found == true {
+			if a, b := podAt(fmt.Sprintf("%s%c", r, col), state); b && a.Kind != p.Kind {
+				return false
+			}
+		}
+		if r == row {
+			found = true
+		}
+	}
+	return true
+}
+
 func potentialMoves(state State, nodes map[string]*Node) []MoveCost {
 	var res []MoveCost
 	var newState State
-	// if a pod is moving, only this one can move
 	for i, p := range state {
+		// If the pod is in the right room and there are no wrong pods below it
+		// don't move
+		if isOptimallyPlaced(p, state) {
+			continue
+		}
 		for _, n := range p.Position.Neighbors {
-			if isFree(n.Node, state) && isReachable(n.Path, state) {
-				// Append new position with pod stopped if it's a destination or no other pod is stopped on the hallway
-				if allowedDestination(p, n.Node) {
-					newState = state.CopyState()
-					newState[i].Position = n.Node
-					res = append(res, MoveCost{Cost: n.Distance * p.Cost, Move: newState})
+			// Check if destination is legit (moving to hallway or the right room)
+			if allowedDestination(p, n.Node) {
+				// Check if destination isn't already occupied
+				if isFree(n.Node, state) {
+					// Check if there are no pods between source and dest
+					if isReachable(n.Path, state) {
+						// Check if destination doesn't contain pods that don't belong to that room
+						if !containsWrongPods(n.Node, state) {
+							newState = state.CopyState()
+							newState[i].Position = n.Node
+							res = append(res, MoveCost{Cost: n.Distance * p.Cost, Move: newState})
+						}
+					}
 				}
 			}
 		}
 	}
-
 	return res
 }
 
@@ -216,8 +260,8 @@ func solve(nodes map[string]*Node, pods []Amphipod, targetState string) int {
 	for len(openStates) > 0 {
 		currentMove := heap.Pop(&openStates).(MoveCost)
 		currentState = currentMove.Move
-		currentCost := currentMove.Cost
 		currentStateKey := currentState.Serialize()
+		currentCost := seenStates[currentStateKey]
 
 		if currentStateKey == targetState {
 			fmt.Println("Found Solution!")
@@ -226,18 +270,18 @@ func solve(nodes map[string]*Node, pods []Amphipod, targetState string) int {
 
 		for _, s := range potentialMoves(currentState, nodes) {
 			moveKey := s.Move.Serialize()
-			if knownCost, seen := seenStates[moveKey]; !seen || currentCost+s.Cost < knownCost {
+			totalCost := currentCost + s.Cost
+			if knownCost, seen := seenStates[moveKey]; !seen || totalCost < knownCost {
 				from[moveKey] = currentStateKey
-				seenStates[moveKey] = currentCost + s.Cost
-				heap.Push(&openStates, MoveCost{Cost: currentCost + s.Cost, Move: s.Move})
+				seenStates[moveKey] = totalCost
+				heap.Push(&openStates, MoveCost{Cost: totalCost, Move: s.Move})
 			}
 		}
 	}
 	return seenStates[targetState]
 }
 
-// 12521 low
-// 14354 high
+// 46108 low
 
 func main() {
 	s := time.Now()

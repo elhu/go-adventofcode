@@ -2,6 +2,7 @@ package main
 
 import (
 	"adventofcode/utils/files"
+<<<<<<< HEAD
 	"container/heap"
 	"fmt"
 	"os"
@@ -36,6 +37,12 @@ func (h *KeyHeap) Pop() interface{} {
 	return x
 }
 
+=======
+	"fmt"
+	"os"
+)
+
+>>>>>>> 0092f18 (Limit number of legal moves)
 type Edge struct {
 	Node     *Node
 	Distance int
@@ -50,7 +57,10 @@ type Node struct {
 	Kind      int // HALLWAY|DESTINATION
 	Neighbors []*Edge
 	Code      string
+<<<<<<< HEAD
 	Allowed   byte
+=======
+>>>>>>> 0092f18 (Limit number of legal moves)
 	// Occupant  *Amphipod
 }
 
@@ -61,12 +71,15 @@ type Amphipod struct {
 	Moving   bool
 }
 
+<<<<<<< HEAD
 // type State struct {
 // 	Pods []Amphipod
 // 	From []State
 // 	Cost int
 // }
 
+=======
+>>>>>>> 0092f18 (Limit number of legal moves)
 type State []Amphipod
 
 func connect(a, b *Node, dist int) {
@@ -83,7 +96,11 @@ func createGraph() map[string]*Node {
 	nodes := make(map[string]*Node)
 	// H (ignore the very end positions)
 	hallways := make([]*Node, 0, 10)
+<<<<<<< HEAD
 	for i := 0; i <= 10; i++ {
+=======
+	for i := 1; i < 10; i++ {
+>>>>>>> 0092f18 (Limit number of legal moves)
 		newNode := &Node{Kind: HALLWAY, Code: fmt.Sprintf("H%d", i)}
 		hallways = append(hallways, newNode)
 		nodes[newNode.Code] = newNode
@@ -91,10 +108,16 @@ func createGraph() map[string]*Node {
 	// RA and RB
 	ra := make([]*Node, 0, 4)
 	rb := make([]*Node, 0, 4)
+<<<<<<< HEAD
 	var allowedMapping = map[int]byte{2: 'A', 4: 'B', 6: 'C', 8: 'D'}
 	for i := 2; i < 10; i += 2 {
 		newNodeA := &Node{Kind: DESTINATION, Code: fmt.Sprintf("RA%d", i), Allowed: allowedMapping[i]}
 		newNodeB := &Node{Kind: DESTINATION, Code: fmt.Sprintf("RB%d", i), Allowed: allowedMapping[i]}
+=======
+	for i := 2; i < 10; i += 2 {
+		newNodeA := &Node{Kind: DESTINATION, Code: fmt.Sprintf("RA%d", i)}
+		newNodeB := &Node{Kind: DESTINATION, Code: fmt.Sprintf("RB%d", i)}
+>>>>>>> 0092f18 (Limit number of legal moves)
 		ra = append(ra, newNodeA)
 		rb = append(rb, newNodeB)
 		nodes[newNodeA.Code] = newNodeA
@@ -105,8 +128,11 @@ func createGraph() map[string]*Node {
 	connect(nodes["RB4"], nodes["RA4"], 1)
 	connect(nodes["RB6"], nodes["RA6"], 1)
 	connect(nodes["RB8"], nodes["RA8"], 1)
+<<<<<<< HEAD
 
 	connect(nodes["H0"], nodes["H1"], 1)
+=======
+>>>>>>> 0092f18 (Limit number of legal moves)
 	connect(nodes["H1"], nodes["RA2"], 2)
 	connect(nodes["H1"], nodes["H3"], 2)
 	connect(nodes["H3"], nodes["RA2"], 2)
@@ -119,7 +145,10 @@ func createGraph() map[string]*Node {
 	connect(nodes["H7"], nodes["RA8"], 2)
 	connect(nodes["H7"], nodes["H9"], 2)
 	connect(nodes["H9"], nodes["RA8"], 2)
+<<<<<<< HEAD
 	connect(nodes["H9"], nodes["H10"], 1)
+=======
+>>>>>>> 0092f18 (Limit number of legal moves)
 
 	return nodes
 }
@@ -129,7 +158,11 @@ func placeAmphipods(nodes map[string]*Node, data []string) []Amphipod {
 	var costs = map[byte]int{'A': 1, 'B': 10, 'C': 100, 'D': 1000}
 	for i := 3; i < 10; i += 2 {
 		for j := 2; j < 4; j++ {
+<<<<<<< HEAD
 			a := Amphipod{Kind: data[j][i], Cost: costs[data[j][i]]}
+=======
+			a := Amphipod{Kind: data[j][i], Cost: costs[data[j][i+1]]}
+>>>>>>> 0092f18 (Limit number of legal moves)
 			prefix := "RB"
 			if j == 2 {
 				prefix = "RA"
@@ -143,7 +176,11 @@ func placeAmphipods(nodes map[string]*Node, data []string) []Amphipod {
 	return pods
 }
 
+<<<<<<< HEAD
 func (s State) CopyState() State {
+=======
+func copyState(s State) State {
+>>>>>>> 0092f18 (Limit number of legal moves)
 	newState := make(State, len(s))
 	for i, a := range s {
 		newState[i] = a
@@ -151,6 +188,7 @@ func (s State) CopyState() State {
 	return newState
 }
 
+<<<<<<< HEAD
 func (s State) Serialize() string {
 	var res []string
 	for _, a := range s {
@@ -292,4 +330,28 @@ func main() {
 	fmt.Printf(" Target state: %s\n", State(target).Serialize())
 	fmt.Println(solve(nodes, pods, State(target).Serialize()))
 	fmt.Println(time.Since(s))
+=======
+func solve(nodes map[string]*Node, pods []Amphipod) int {
+	openStates := []State{pods}
+	var currentState State
+	for len(openStates) > 0 {
+		currentState, openStates = openStates[0], openStates[1:]
+		ostate := copyState(currentState)
+		currentState[0].Kind = 'Z'
+		for i, c := range currentState {
+			fmt.Printf("%d %c %s\n", i, c.Kind, c.Position.Code)
+		}
+		for i, c := range ostate {
+			fmt.Printf("%d %c %s\n", i, c.Kind, c.Position.Code)
+		}
+	}
+	return 0
+}
+
+func main() {
+	data := files.ReadLines(os.Args[1])
+	nodes := createGraph()
+	pods := placeAmphipods(nodes, data)
+	fmt.Println(solve(nodes, pods))
+>>>>>>> 0092f18 (Limit number of legal moves)
 }
