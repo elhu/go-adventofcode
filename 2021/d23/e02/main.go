@@ -217,6 +217,25 @@ func isOptimallyPlaced(p Amphipod, state State) bool {
 	return true
 }
 
+func isDeepestSpot(node *Node, state State) bool {
+	if node.Kind == HALLWAY {
+		return true
+	}
+	row, col := node.Code[0:2], node.Code[2]
+
+	var found bool
+	for _, r := range rows {
+		if found == true {
+			if _, b := podAt(fmt.Sprintf("%s%c", r, col), state); !b {
+				return false
+			}
+		}
+		if r == row {
+			found = true
+		}
+	}
+	return true
+}
 func potentialMoves(state State, nodes map[string]*Node) []MoveCost {
 	var res []MoveCost
 	var newState State
@@ -235,9 +254,15 @@ func potentialMoves(state State, nodes map[string]*Node) []MoveCost {
 					if isReachable(n.Path, state) {
 						// Check if destination doesn't contain pods that don't belong to that room
 						if !containsWrongPods(n.Node, state) {
-							newState = state.CopyState()
-							newState[i].Position = n.Node
-							res = append(res, MoveCost{Cost: n.Distance * p.Cost, Move: newState})
+							// Check if destination is the deepest we can place pod in room
+							if isDeepestSpot(n.Node, state) {
+								if n.Node.Kind == DESTINATION {
+									fmt.Printf("Going to place %c in destination %s\n", p.Kind, n.Node.Code)
+								}
+								newState = state.CopyState()
+								newState[i].Position = n.Node
+								res = append(res, MoveCost{Cost: n.Distance * p.Cost, Move: newState})
+							}
 						}
 					}
 				}
