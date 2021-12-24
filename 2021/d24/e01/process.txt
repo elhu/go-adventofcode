@@ -1,0 +1,47 @@
+// Input is divided in 14 sections, one for each digit
+// There are two kind of sections:
+// If the first `div z` has 1 for argument, it pushes
+// the current digit + the last `add y` onto a stack
+// If the first `div z` has 26 for argument, it pops
+// the stack, and compares with the value in the first add x
+//
+// The stack must be empty at the end, so all the conditions
+// must be met.
+01. Z = [A+6]
+02. Z = [[B+14] | TAIL]
+03. Z = [[C+14] | TAIL]
+04. if D != Z.Pop() - 8
+  Z = [[D+10], TAIL]
+05. Z = [E+9 | TAIL]
+06. Z = [F+12 | TAIL]
+07. if G != Z.Pop() - 11
+  Z = [[G+8] | TAIL]
+08. if H != Z.Pop() - 4
+  Z = [[H+13] | TAIL]
+09. if I != Z.Pop() - 15
+  Z = [[I+12] | TAIL]
+10. Z = [[J+6] | TAIL]
+11. Z = [[K+9] | TAIL]
+12. if L != Z.Pop() - 1
+  Z = [[L+15] | TAIL]
+13. if M != Z.Pop() - 8
+  Z = [[M+4] | TAIL]
+14. if N != Z.Pop() - 14
+  Z = [[N+10] | TAIL]
+
+
+D == C + 14 - 8 == C + 6
+G == F + 12 - 11 == F + 1
+H == E + 9 - 4 == E + 5
+I == B + 14 - 15 == B - 1
+L == K + 9 - 1 == K + 8
+M == J + 6 - 8 == J - 2
+N == A + 6 - 14 == A - 8
+
+max:
+ABCDEFGHIJKLMN
+99394899891971
+
+min:
+ABCDEFGHIJKLMN
+92171126131911
