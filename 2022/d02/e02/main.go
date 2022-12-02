@@ -15,31 +15,37 @@ func atoi(str string) int {
 	return res
 }
 
+const (
+	lose = "X"
+	draw = "Y"
+	win  = "Z"
+
+	rock     = "A"
+	paper    = "B"
+	scissors = "C"
+)
+
 var values = map[string]int{
-	"A": 1, // rock
-	"B": 2, // paper
-	"C": 3, // scissors
+	rock:     1,
+	paper:    2,
+	scissors: 3,
 }
 
 var outcomes = map[string]int{
-	"X": 0, // lose
-	"Y": 3, // draw
-	"Z": 6, // win
+	lose: 0,
+	draw: 3,
+	win:  6,
 }
 
-const lose = "X"
-const draw = "Y"
-const win = "Z"
-
 var plays = map[string]map[string]string{
-	"A": {
-		lose: "C", win: "B", draw: "A",
+	rock: {
+		lose: scissors, win: paper, draw: rock,
 	},
-	"B": {
-		lose: "A", win: "C", draw: "B",
+	paper: {
+		lose: rock, win: scissors, draw: paper,
 	},
-	"C": {
-		lose: "B", win: "A", draw: "C",
+	scissors: {
+		lose: paper, win: rock, draw: scissors,
 	},
 }
 
