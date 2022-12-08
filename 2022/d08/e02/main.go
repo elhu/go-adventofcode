@@ -6,44 +6,28 @@ import (
 	"os"
 )
 
+func directionalScore(x, y int, vectorX, vectorY int, heights [][]int, targetHeight int) int {
+	score := 0
+	x += vectorX
+	y += vectorY
+	for x >= 0 && x < len(heights[0]) && y >= 0 && y < len(heights) {
+		score++
+		if heights[y][x] >= targetHeight {
+			break
+		}
+		x += vectorX
+		y += vectorY
+	}
+	return score
+}
+
 func scenicScore(x, y int, heights [][]int) int {
 	targetHeight := heights[y][x]
 	score := 1
-	tmpScore := 0
-	for i := y - 1; i >= 0; i-- {
-		tmpScore++
-		if heights[i][x] >= targetHeight {
-			break
-		}
-	}
-	score *= tmpScore
-
-	tmpScore = 0
-	for i := y + 1; i < len(heights); i++ {
-		tmpScore++
-		if heights[i][x] >= targetHeight {
-			break
-		}
-	}
-	score *= tmpScore
-
-	tmpScore = 0
-	for i := x - 1; i >= 0; i-- {
-		tmpScore++
-		if heights[y][i] >= targetHeight {
-			break
-		}
-	}
-	score *= tmpScore
-
-	tmpScore = 0
-	for i := x + 1; i < len(heights[0]); i++ {
-		tmpScore++
-		if heights[y][i] >= targetHeight {
-			break
-		}
-	}
-	score *= tmpScore
+	score *= directionalScore(x, y, 0, -1, heights, targetHeight)
+	score *= directionalScore(x, y, 0, 1, heights, targetHeight)
+	score *= directionalScore(x, y, -1, 0, heights, targetHeight)
+	score *= directionalScore(x, y, 1, 0, heights, targetHeight)
 
 	return score
 }
