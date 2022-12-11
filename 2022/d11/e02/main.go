@@ -1,8 +1,13 @@
 package main
 
 import (
+	"adventofcode/utils/files"
+	"bytes"
 	"fmt"
+	"os"
 	"sort"
+	"strconv"
+	"strings"
 )
 
 type Monkey struct {
@@ -103,6 +108,54 @@ var monkeys = []*Monkey{
 	},
 }
 
+func atoi(str string) int {
+	num, err := strconv.Atoi(str)
+	if err != nil {
+		panic(err)
+	}
+	return num
+}
+
+func parseMonkeys(monkeyData [][]byte) []*Monkey {
+	monkeys := make([]*Monkey, 0, len(monkeyData))
+	for _, md := range monkeyData {
+		parts := strings.Split(string(md), "\n")
+		startItems := make([]int, 0)
+		for _, val := range strings.Split(parts[1][len("  Starting items: "):], ", ") {
+			startItems = append(startItems, atoi(val))
+		}
+		var operator, operand string
+		fmt.Sscanf(parts[2], "  Operation: new = old %s %s", &operator, &operand)
+		operation := func(old int) int {
+			if operator == "+" {
+				if operand == "old" {
+					return old + old
+				} else {
+					return old + atoi(operand)
+				}
+			} else {
+				if operand == "old" {
+					return old * old
+				} else {
+					return old * atoi(operand)
+				}
+			}
+		}
+		var divTest, testTrue, testFalse int
+		fmt.Sscanf(parts[3], "  Test: divisible by %d", &divTest)
+		fmt.Sscanf(parts[4], "    If true: throw to monkey %d", &testTrue)
+		fmt.Sscanf(parts[5], "    If false: throw to monkey %d", &testFalse)
+		monkeys = append(monkeys, &Monkey{
+			items:     startItems,
+			operation: operation,
+			testDivBy: divTest,
+			testTrue:  testTrue,
+			testFalse: testFalse,
+		})
+	}
+	return monkeys
+}
+
 func solve(monkeys []*Monkey, rounds int) int {
 	processed := make([]int, len(monkeys))
 	var prodDivBy = 1
@@ -128,5 +181,7 @@ func solve(monkeys []*Monkey, rounds int) int {
 }
 
 func main() {
+	data := bytes.Split(files.ReadFile(os.Args[1]), []byte("\n\n"))
+	monkeys := parseMonkeys(data)
 	fmt.Println(solve(monkeys, 10000))
 }
