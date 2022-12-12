@@ -9,40 +9,39 @@ import (
 
 type Node struct {
 	id         string
-	height     byte
+	height     int
 	neighbours []*Node
 }
 
 func parseGraph(data []string) (*Node, *Node) {
-	var start, end *Node
 	nodes := make(map[string]*Node)
+	var start, end *Node
 	for i, line := range data {
-		for j, cell := range line {
-			newNode := &Node{id: fmt.Sprintf("%d:%d", i, j)}
-			if cell == 'S' {
-				cell = 'a'
-				start = newNode
-			} else if cell == 'E' {
-				cell = 'z'
-				end = newNode
+		for j, char := range line {
+			node := &Node{id: fmt.Sprintf("%d:%d", i, j)}
+			height := int(char - 'a')
+			if char == 'S' {
+				height = 0
+				start = node
+			} else if char == 'E' {
+				height = 25
+				end = node
 			}
-			newNode.height = byte(cell)
-			nodes[newNode.id] = newNode
+			node.height = height
+			nodes[node.id] = node
 		}
 	}
-	for i := 0; i < len(data); i++ {
-		for j := 0; j < len(data[i]); j++ {
-			self := nodes[fmt.Sprintf("%d:%d", i, j)]
-			candidates := []string{
-				fmt.Sprintf("%d:%d", i-1, j),
+	for i := range data {
+		for j := range data[i] {
+			node := nodes[fmt.Sprintf("%d:%d", i, j)]
+			for _, nID := range []string{
 				fmt.Sprintf("%d:%d", i+1, j),
+				fmt.Sprintf("%d:%d", i-1, j),
 				fmt.Sprintf("%d:%d", i, j-1),
 				fmt.Sprintf("%d:%d", i, j+1),
-			}
-			for _, cid := range candidates {
-				candidate, exists := nodes[cid]
-				if exists && candidate.height <= self.height+1 {
-					self.neighbours = append(self.neighbours, candidate)
+			} {
+				if neighbour, exists := nodes[nID]; exists && neighbour.height <= node.height+1 {
+					node.neighbours = append(node.neighbours, neighbour)
 				}
 			}
 		}
@@ -50,37 +49,53 @@ func parseGraph(data []string) (*Node, *Node) {
 	return start, end
 }
 
+// func bfs(start, end *Node) int {
+// 	queue := [][]*Node{{start}}
+// 	visited := stringset.New()
+// 	visited.Add(start.id)
+// 	var headPath []*Node
+// 	for len(queue) > 0 {
+// 		headPath, queue = queue[0], queue[1:]
+// 		head := headPath[len(headPath)-1]
+// 		if head == end {
+// 			return len(headPath) - 1
+// 		}
+// 		for _, n := range head.neighbours {
+// 			if !visited.HasMember(n.id) {
+// 				visited.Add(n.id)
+// 				queue = append(queue, append(headPath, n))
+// 			}
+// 		}
+// 	}
+// 	panic("Couldn't find exit node")
+// }
+
 func bfs(start, end *Node) int {
-	rounds := 0
-	queue, newQueue := []*Node{start}, make([]*Node, 0)
+	queue := [][]*Node{{start}}
 	visited := stringset.New()
-	var head *Node
+	visited.Add(start.id)
+	var headPath []*Node
 	for len(queue) > 0 {
-		fmt.Println(len(queue), len(newQueue))
-		head, queue = queue[0], queue[1:]
-		visited.Add(head.id)
-		if head == end {
-			return rounds
-		}
+		headPath, queue = queue[0], queue[1:]
+		head := headPath[len(headPath)-1]
 		for _, n := range head.neighbours {
+			if n == end {
+				return len(headPath)
+			}
 			if !visited.HasMember(n.id) {
-				fmt.Printf("Adding candidate step from %c to %c\n", head.height, n.height)
-				newQueue = append(newQueue, n)
+				visited.Add(n.id)
+				newPath := make([]*Node, len(headPath))
+				copy(newPath, headPath)
+				queue = append(queue, append(newPath, n))
 			}
 		}
-		if len(queue) == 0 {
-			queue = newQueue
-			newQueue = newQueue[:0]
-			rounds++
-		}
 	}
-	panic("Didn't find end node")
+	panic("Couldn't find exit node")
 }
 
 func main() {
 	data := files.ReadLines(os.Args[1])
 	start, end := parseGraph(data)
-	fmt.Println(start)
-	fmt.Println(end)
+	fmt.Println(start, end)
 	fmt.Println(bfs(start, end))
 }
