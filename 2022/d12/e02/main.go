@@ -13,10 +13,9 @@ type Node struct {
 	neighbours []*Node
 }
 
-func parseGraph(data []string) ([]*Node, *Node) {
+func parseGraph(data []string) *Node {
 	nodes := make(map[string]*Node)
 	var end *Node
-	starts := make([]*Node, 0)
 	for i, line := range data {
 		for j, char := range line {
 			node := &Node{id: fmt.Sprintf("%d:%d", i, j)}
@@ -28,9 +27,6 @@ func parseGraph(data []string) ([]*Node, *Node) {
 				end = node
 			}
 			node.height = height
-			if node.height == 0 {
-				starts = append(starts, node)
-			}
 			nodes[node.id] = node
 		}
 	}
@@ -43,16 +39,16 @@ func parseGraph(data []string) ([]*Node, *Node) {
 				fmt.Sprintf("%d:%d", i, j-1),
 				fmt.Sprintf("%d:%d", i, j+1),
 			} {
-				if neighbour, exists := nodes[nID]; exists && neighbour.height <= node.height+1 {
+				if neighbour, exists := nodes[nID]; exists && node.height <= neighbour.height+1 {
 					node.neighbours = append(node.neighbours, neighbour)
 				}
 			}
 		}
 	}
-	return starts, end
+	return end
 }
 
-func bfs(start, end *Node) (int, bool) {
+func bfs(start *Node) int {
 	queue := [][]*Node{{start}}
 	visited := stringset.New()
 	visited.Add(start.id)
@@ -61,8 +57,8 @@ func bfs(start, end *Node) (int, bool) {
 		headPath, queue = queue[0], queue[1:]
 		head := headPath[len(headPath)-1]
 		for _, n := range head.neighbours {
-			if n == end {
-				return len(headPath), true
+			if n.height == 0 {
+				return len(headPath)
 			}
 			if !visited.HasMember(n.id) {
 				visited.Add(n.id)
@@ -72,18 +68,11 @@ func bfs(start, end *Node) (int, bool) {
 			}
 		}
 	}
-	return 0, false
+	panic("Couldn't find shortest path")
 }
 
 func main() {
 	data := files.ReadLines(os.Args[1])
-	starts, end := parseGraph(data)
-	min := 999999999999
-	for _, start := range starts {
-		distance, success := bfs(start, end)
-		if success && distance < min {
-			min = distance
-		}
-	}
-	fmt.Println(min)
+	end := parseGraph(data)
+	fmt.Println(bfs(end))
 }

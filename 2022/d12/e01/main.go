@@ -49,27 +49,6 @@ func parseGraph(data []string) (*Node, *Node) {
 	return start, end
 }
 
-// func bfs(start, end *Node) int {
-// 	queue := [][]*Node{{start}}
-// 	visited := stringset.New()
-// 	visited.Add(start.id)
-// 	var headPath []*Node
-// 	for len(queue) > 0 {
-// 		headPath, queue = queue[0], queue[1:]
-// 		head := headPath[len(headPath)-1]
-// 		if head == end {
-// 			return len(headPath) - 1
-// 		}
-// 		for _, n := range head.neighbours {
-// 			if !visited.HasMember(n.id) {
-// 				visited.Add(n.id)
-// 				queue = append(queue, append(headPath, n))
-// 			}
-// 		}
-// 	}
-// 	panic("Couldn't find exit node")
-// }
-
 func bfs(start, end *Node) int {
 	queue := [][]*Node{{start}}
 	visited := stringset.New()
@@ -96,6 +75,5 @@ func bfs(start, end *Node) int {
 func main() {
 	data := files.ReadLines(os.Args[1])
 	start, end := parseGraph(data)
-	fmt.Println(start, end)
 	fmt.Println(bfs(start, end))
 }
