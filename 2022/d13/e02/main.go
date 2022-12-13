@@ -157,7 +157,7 @@ func main() {
 	})
 	res := 1
 	for i, p := range packets {
-		if packetToStr(p) == DECODER_2 || packetToStr(p) == DECODER_6 {
+		if p == p2 || p == p6 {
 			res *= i + 1
 		}
 	}
