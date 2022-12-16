@@ -5,7 +5,6 @@ import (
 	"adventofcode/utils/sets/stringset"
 	"fmt"
 	"os"
-	"sort"
 	"strings"
 )
 
@@ -98,7 +97,7 @@ func buildDistanceMatrix(nodes map[string]*Node) map[string]map[string]int {
 }
 
 type QueueItem struct {
-	visited       *stringset.StringSet
+	visited       int
 	lastVisited   string
 	released      int
 	timeRemaining int
@@ -116,25 +115,54 @@ func allPairs(list []string) [][2]string {
 	return pairs
 }
 
+func bitPos(nodes map[string]map[string]int) map[string]uint {
+	positions := make(map[string]uint)
+	pos := uint(1)
+	for k := range nodes {
+		positions[k] = pos
+		pos++
+	}
+	positions["AA"] = 0
+	return positions
+}
+
+func setBit(n int, pos uint) int {
+	n |= (1 << pos)
+	return n
+}
+
+func hasBit(n int, pos uint) bool {
+	val := n & (1 << pos)
+	return (val > 0)
+}
+
+func countSetBits(n int) int {
+	count := 0
+	for n != 0 {
+		count += n & 1
+		n >>= 1
+	}
+	return count
+}
+
 func solve(nodes map[string]*Node) int {
 	distances := buildDistanceMatrix(nodes)
-	queue := []QueueItem{{visited: stringset.NewFromSlice([]string{"AA"}), lastVisited: "AA", released: 0, timeRemaining: 26}}
-	bestReleased := make(map[string]int)
+	bp := bitPos(distances)
+	visited := setBit(0, bp["AA"])
+
+	queue := []QueueItem{{visited: visited, lastVisited: "AA", released: 0, timeRemaining: 26}}
+	bestReleased := make(map[int]int)
 
 	var head QueueItem
 	for len(queue) > 0 {
 		head, queue = queue[0], queue[1:]
 		for valve, distance := range distances[head.lastVisited] {
 			timeRemaining := head.timeRemaining - distance
-			if !head.visited.HasMember(valve) && timeRemaining > 0 {
-				visited := stringset.NewFromSlice(head.visited.Members())
-				visited.Add(valve)
+			if !hasBit(head.visited, bp[valve]) && timeRemaining > 0 {
+				visited = setBit(head.visited, bp[valve])
 				released := head.released + timeRemaining*nodes[valve].value
-				visitedSlice := visited.Members()
-				sort.Strings(visitedSlice)
-				key := strings.Join(visitedSlice, ":") // Hackerman!
-				if bestReleased[key] < released {
-					bestReleased[key] = released
+				if bestReleased[visited] < released {
+					bestReleased[visited] = released
 				}
 				queue = append(queue, QueueItem{visited: visited, lastVisited: valve, released: released, timeRemaining: timeRemaining})
 			}
@@ -144,10 +172,7 @@ func solve(nodes map[string]*Node) int {
 	max := 0
 	for k1, v1 := range bestReleased {
 		for k2, v2 := range bestReleased {
-			s1 := stringset.NewFromSlice(strings.Split(k1, ":"))
-			s2 := stringset.NewFromSlice(strings.Split(k2, ":"))
-			// If only overlap is starting AA
-			if s1.Substract(s2).Len() == s1.Len()-1 {
+			if k1&k2 == 1 {
 				if v1+v2 > max {
 					max = v1 + v2
 				}
