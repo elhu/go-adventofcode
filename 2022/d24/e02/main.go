@@ -134,7 +134,7 @@ func candidates(pos coords2d.Coords2d, valley [][]Cell) []coords2d.Coords2d {
 	return res
 }
 
-func solve(valley [][]Cell, start, end coords2d.Coords2d) int {
+func findPath(valley [][]Cell, start, end coords2d.Coords2d) State {
 	queue := []State{{pos: start, valley: valley, moves: 0}}
 	seen := stringset.New()
 	var head State
@@ -146,7 +146,7 @@ func solve(valley [][]Cell, start, end coords2d.Coords2d) int {
 		}
 		seen.Add(k)
 		if head.pos == end {
-			return head.moves
+			return head
 		}
 
 		newValley := moveBlizzards(head.valley)
@@ -155,6 +155,22 @@ func solve(valley [][]Cell, start, end coords2d.Coords2d) int {
 		}
 	}
 	panic("WTF")
+}
+
+func solve(valley [][]Cell) int {
+	res := 0
+	start := coords2d.Coords2d{X: 1, Y: 0}
+	end := coords2d.Coords2d{X: len(valley[0]) - 2, Y: len(valley) - 1}
+	finalState := findPath(valley, start, end)
+	fmt.Printf("Go there in %d\n", finalState.moves)
+	res += finalState.moves
+	finalState = findPath(finalState.valley, end, start)
+	fmt.Printf("Go back in %d\n", finalState.moves)
+	res += finalState.moves
+	finalState = findPath(finalState.valley, start, end)
+	fmt.Printf("Finally got out in %d\n", finalState.moves)
+	res += finalState.moves
+	return res
 }
 
 func main() {
@@ -173,5 +189,17 @@ func main() {
 			}
 		}
 	}
-	fmt.Println(solve(valley, coords2d.Coords2d{X: 1, Y: 0}, coords2d.Coords2d{X: len(valley[0]) - 2, Y: len(valley) - 1}))
+	fmt.Println(solve(valley))
+	// s := coords2d.Coords2d{X: 1, Y: 0}
+	// fmt.Println(toString(State{pos: s, valley: valley}))
+	// fmt.Println("--")
+	// valley = moveBlizzards(valley)
+	// fmt.Println(toString(State{pos: s, valley: valley}))
+	// fmt.Println("--")
+	// valley = moveBlizzards(valley)
+	// fmt.Println(toString(State{pos: s, valley: valley}))
+	// fmt.Println("--")
+	// valley = moveBlizzards(valley)
+	// fmt.Println(toString(State{pos: s, valley: valley}))
+	// fmt.Println("--")
 }
