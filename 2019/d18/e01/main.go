@@ -8,6 +8,7 @@ import (
 	"container/heap"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 )
 
@@ -38,8 +39,11 @@ func (pq PriorityQueue) Len() int { return len(pq) }
 
 // CHANGED IT FROM EXAMPLE
 func (pq PriorityQueue) Less(i, j int) bool {
-	// We want Pop to give us the highest, not lowest, priority so we use greater than here.
-	return pq[i].priority < pq[j].priority
+	// Since prio == distance, we need to pop the lowest prio first
+	if pq[i].priority != pq[j].priority {
+		return pq[i].priority < pq[j].priority
+	}
+	return pq[i].value.collected.Len() > pq[j].value.collected.Len()
 }
 
 func (pq PriorityQueue) Swap(i, j int) {
@@ -85,6 +89,14 @@ func bsCopy(a *byteset.ByteSet) *byteset.ByteSet {
 	return b
 }
 
+func stateToKey(state *State) string {
+	collected := state.collected.Members()
+	sort.Slice(collected, func(i, j int) bool {
+		return collected[i] < collected[j]
+	})
+	return fmt.Sprintf("%s:%c", string(collected), state.currNode)
+}
+
 func solve(lines [][]byte, toCollect *byteset.ByteSet) int {
 	graph := buildGraph(lines)
 	pq := make(PriorityQueue, 1)
@@ -94,8 +106,10 @@ func solve(lines [][]byte, toCollect *byteset.ByteSet) int {
 		index:    0,
 	}
 	heap.Init(&pq)
+	visited := make(map[string]int)
 	for pq.Len() > 0 {
-		state := pq.Pop().(*Item).value
+		state := heap.Pop(&pq).(*Item).value
+
 		if state.collected.Len() == toCollect.Len() {
 			return state.distance
 		}
@@ -103,10 +117,15 @@ func solve(lines [][]byte, toCollect *byteset.ByteSet) int {
 		for key, dist := range reachableKeys(state.currNode, state.collected, 0, make(map[byte]int)) {
 			newCollected := bsCopy(state.collected)
 			newCollected.Add(key)
-			pq.Push(&Item{
-				value:    &State{collected: newCollected, distance: state.distance + dist, currNode: graph[key]},
-				priority: state.distance + dist,
-			})
+			newState := &State{collected: newCollected, distance: state.distance + dist, currNode: graph[key]}
+			newStateKey := stateToKey(newState)
+			if distance, exists := visited[newStateKey]; !exists || distance > newState.distance {
+				visited[newStateKey] = newState.distance
+				heap.Push(&pq, &Item{
+					value:    newState,
+					priority: newState.distance,
+				})
+			}
 		}
 	}
 
@@ -123,7 +142,9 @@ func reachableKeys(node *Node, collected *byteset.ByteSet, distance int, visited
 		if dist, exists := visited[e.node.name]; !exists || dist > distance {
 			visited[e.node.name] = distance
 			if e.node.kind == key && !collected.HasMember(e.node.name) {
-				keys[e.node.name] = distance + e.distance
+				if d, exists := keys[e.node.name]; !exists || d > distance+e.distance {
+					keys[e.node.name] = distance + e.distance
+				}
 			}
 			if e.node.kind == door && collected.HasMember(toLower(e.node.name)) {
 				for key, dist := range reachableKeys(e.node, collected, distance+e.distance, visited) {
