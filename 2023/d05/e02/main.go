@@ -48,40 +48,28 @@ func parseSeeds(data string) []int {
 	return seeds
 }
 
-func min(arr []int) int {
-	res := arr[0]
-	for _, v := range arr[1:] {
-		if v < res {
-			res = v
-		}
-	}
-	return res
-}
-
-func getSeedPosition(seed int, maps []Map) int {
-	pos := seed
-	for _, m := range maps {
+func getStartPosition(seed int, maps []Map) int {
+	for i := len(maps) - 1; i >= 0; i-- {
+		m := maps[i]
 		for _, r := range m.ranges {
-			if pos >= r.minSource && pos < r.minSource+r.length {
-				pos = r.minDest + (pos - r.minSource)
+			if seed >= r.minDest && seed < r.minDest+r.length {
+				seed = r.minSource + (seed - r.minDest)
 				break
 			}
 		}
 	}
-	return pos
+	return seed
 }
 
 func solve(seeds []int, maps []Map) int {
-	minSeedPos := 99999999999999999
-	for i := 0; i < len(seeds); i += 2 {
-		for offset := 0; offset < seeds[i+1]; offset++ {
-			seedPos := getSeedPosition(seeds[i]+offset, maps)
-			if seedPos < minSeedPos {
-				minSeedPos = seedPos
+	for i := 0; ; i++ {
+		startPos := getStartPosition(i, maps)
+		for s := 0; s < len(seeds); s += 2 {
+			if startPos >= seeds[s] && startPos < seeds[s]+seeds[s+1] {
+				return i
 			}
 		}
 	}
-	return minSeedPos
 }
 
 func main() {
