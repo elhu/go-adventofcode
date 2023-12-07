@@ -31,21 +31,13 @@ type HandBid struct {
 	bid  int
 }
 
-func kindOf(counts []int) int {
-	if counts[0] == 5 {
-		return fiveOfKind
-	} else if counts[0] == 4 {
-		return fourOfKind
-	} else if counts[0] == 3 && counts[1] == 2 {
-		return fullHouse
-	} else if counts[0] == 3 {
-		return threeOfKind
-	} else if counts[0] == 2 && counts[1] == 2 {
-		return twoPair
-	} else if counts[0] == 2 {
-		return onePair
-	}
-	return highCard
+var kindMap = map[[2]int]int{
+	{5, 0}: fiveOfKind,
+	{4, 1}: fourOfKind,
+	{3, 2}: fullHouse,
+	{3, 1}: threeOfKind,
+	{2, 2}: twoPair,
+	{2, 1}: onePair,
 }
 
 func parseHand(value string) Hand {
@@ -53,12 +45,14 @@ func parseHand(value string) Hand {
 	for _, b := range value {
 		counters[byte(b)]++
 	}
-	counts := make([]int, 0)
+	counts := make([]int, 5)
+	i := 0
 	for _, v := range counters {
-		counts = append(counts, v)
+		counts[i] = v
+		i++
 	}
 	sort.Sort(sort.Reverse(sort.IntSlice(counts)))
-	return Hand{value: value, kind: kindOf(counts)}
+	return Hand{value: value, kind: kindMap[[2]int{counts[0], counts[1]}]}
 }
 
 func compare(a, b Hand) int {
