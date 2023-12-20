@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"slices"
+	"sort"
 	"strings"
 )
 
@@ -86,16 +87,6 @@ func parseModules(lines []string) map[string]*Module {
 		}
 	}
 	return modules
-}
-
-func allInputMatched(module *Module) (bool, bool) {
-	t := module.conjState[module.receivesFrom[0].name]
-	for _, inSig := range module.conjState {
-		if inSig != t {
-			return false, false
-		}
-	}
-	return true, t
 }
 
 func allInputHigh(module *Module) bool {
@@ -180,7 +171,8 @@ func conjVal(m *Module) int {
  *
  * Then run: dot -Tpng input.dot > input.png
  * open input.png and find the CONJUNCTIONs for the 4 subgraphs
- * for my input, it's "jz", "sl", "rr", "pq"
+ * for my input, it's "jz", "sl", "rr", "pq".
+ * The solution assumes that every input has 4 subgraphs, and that their CONJUNCTIONs are the ones with the highest number of inputs.
  *
  * The solution is the LCM of the frequencies of the CONJUNCTIONs,
  * but technically they are coprime at least in my input so the LCM is just the product
@@ -190,5 +182,15 @@ func main() {
 	data := strings.TrimRight(string(files.ReadFile(os.Args[1])), "\n")
 	lines := strings.Split(data, "\n")
 	modules := parseModules(lines)
-	fmt.Println(solve(modules, []string{"jz", "sl", "rr", "pq"}))
+	var conjKeys []string
+	for _, m := range modules {
+		if m.kind == CONJUNCTION {
+			conjKeys = append(conjKeys, m.name)
+		}
+	}
+	sort.Slice(conjKeys, func(i, j int) bool {
+		return len(modules[conjKeys[i]].conjState) > len(modules[conjKeys[j]].conjState)
+	})
+
+	fmt.Println(solve(modules, conjKeys[:4]))
 }

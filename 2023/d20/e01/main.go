@@ -87,16 +87,6 @@ func parseModules(lines []string) map[string]*Module {
 	return modules
 }
 
-func allInputMatched(module *Module) (bool, bool) {
-	t := module.conjState[module.receivesFrom[0].name]
-	for _, inSig := range module.conjState {
-		if inSig != t {
-			return false, false
-		}
-	}
-	return true, t
-}
-
 func allInputHigh(module *Module) bool {
 	for _, inSig := range module.conjState {
 		if inSig == LOW {
