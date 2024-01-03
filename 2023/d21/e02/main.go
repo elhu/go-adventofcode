@@ -30,11 +30,18 @@ func mod(a, b int) int {
 	return (a%b + b) % b
 }
 
-func addWithMod(a, b coords2d.Coords2d, grid [][]byte) coords2d.Coords2d {
-	res := coords2d.Add(a, b)
-	res.X = mod(res.X, len(grid[0]))
-	res.Y = mod(res.Y, len(grid))
-	return res
+func lagrangeInterpolate(values [][2]int, toGuess int) int {
+	var result float64
+	for i := range values {
+		term := float64(values[i][1])
+		for j := range values {
+			if i != j {
+				term *= float64(toGuess-values[j][0]) / float64(values[i][0]-values[j][0])
+			}
+		}
+		result += term
+	}
+	return int(result)
 }
 
 func bfs(lines [][]byte, startPos coords2d.Coords2d) int {
@@ -44,13 +51,12 @@ func bfs(lines [][]byte, startPos coords2d.Coords2d) int {
 
 	offset := MAX_DEPTH % len(lines)
 	rounds := MAX_DEPTH/len(lines) + 1
-	var sequence []int
+	var sequence [][2]int
 
 	for i := 0; i < MAX_DEPTH; i++ {
 		toVisit[i+1] = make(map[coords2d.Coords2d]struct{})
 		for pos := range toVisit[i] {
 			for _, dir := range []coords2d.Coords2d{north, south, east, west} {
-				// next := addWithMod(pos, dir, lines)
 				next := coords2d.Add(pos, dir)
 				modNext := coords2d.Coords2d{X: mod(next.X, len(lines[0])), Y: mod(next.Y, len(lines))}
 				if lines[modNext.Y][modNext.X] == '.' || lines[modNext.Y][modNext.X] == 'S' {
@@ -59,16 +65,13 @@ func bfs(lines [][]byte, startPos coords2d.Coords2d) int {
 			}
 		}
 		if (i-offset)%len(lines) == 0 {
-			sequence = append(sequence, len(toVisit[i]))
+			sequence = append(sequence, [2]int{len(sequence) + 1, len(toVisit[i])})
 		}
 		if len(sequence) == 3 {
 			break
 		}
 	}
-	fmt.Println(sequence)
-	// ToDo: find a way to compute the polynomial equation for the sequence
-	// Plug those numbers into https://onlinetoolz.net/sequences and adjust the equation below
-	return 14663*rounds*rounds - 14518*rounds + 3574
+	return lagrangeInterpolate(sequence, rounds)
 }
 
 /*
@@ -91,7 +94,6 @@ func solve(lines [][]byte) int {
 const MAX_DEPTH = 26501365
 
 func main() {
-	fmt.Println("THIS SOLUTION ISN'T GENERIC, LOOK AT THE COMMENTS IN THE SOURCE CODE.")
 	data := bytes.TrimRight(files.ReadFile(os.Args[1]), "\n")
 	lines := bytes.Split(data, []byte("\n"))
 	fmt.Println(solve(lines))
