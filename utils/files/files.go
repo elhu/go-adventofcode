@@ -1,7 +1,7 @@
 package files
 
 import (
-	"io/ioutil"
+	"os"
 	"strings"
 )
 
@@ -14,7 +14,7 @@ func check(e error) {
 // ReadFile reads the entire file and returns it as byte slice.
 // Errors are considered unrecoverable will crash the program.
 func ReadFile(filename string) []byte {
-	data, err := ioutil.ReadFile(filename)
+	data, err := os.ReadFile(filename)
 	check(err)
 	return data
 }
