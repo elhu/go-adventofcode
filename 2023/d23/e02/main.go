@@ -3,15 +3,12 @@ package main
 import (
 	"adventofcode/utils/coords/coords2d"
 	"adventofcode/utils/files"
+	"adventofcode/utils/graphs"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 )
-
-type Node struct {
-	pos       coords2d.Coords2d
-	neighbors map[*Node]int
-}
 
 func pad(lines []string, char string) []string {
 	padded := make([]string, len(lines)+2)
@@ -30,8 +27,56 @@ var (
 	west  = coords2d.Coords2d{X: -1, Y: 0}
 )
 
-func findNeighbors(grid []string, junctions map[coords2d.Coords2d]*Node, pos coords2d.Coords2d) map[*Node]int {
-	neighbors := make(map[*Node]int)
+func bfs(start, end coords2d.Coords2d, graph *graphs.Graph[coords2d.Coords2d, struct{}]) int {
+	type state struct {
+		curr coords2d.Coords2d
+		path map[coords2d.Coords2d]int
+	}
+	var queue []state
+	queue = append(queue, state{curr: start, path: map[coords2d.Coords2d]int{start: 0}})
+	var head state
+	var validPaths []state
+	for len(queue) > 0 {
+		head, queue = queue[0], queue[1:]
+		if head.curr == end {
+			validPaths = append(validPaths, head)
+			continue
+		}
+		for n, e := range graph.Edges[head.curr] {
+			if _, found := head.path[n]; !found {
+				newPath := make(map[coords2d.Coords2d]int)
+				for k, v := range head.path {
+					newPath[k] = v
+				}
+				newPath[n] = e.Weight
+				queue = append(queue, state{curr: n, path: newPath})
+			}
+		}
+	}
+	max := 0
+	for _, vp := range validPaths {
+		len := 0
+		for _, d := range vp.path {
+			len += d
+		}
+		if len > max {
+			max = len
+		}
+	}
+	return max
+}
+
+func visitedToKey(visited map[coords2d.Coords2d]struct{}) string {
+	var keys []string
+	for k := range visited {
+		keys = append(keys, fmt.Sprintf("%d,%d", k.X, k.Y))
+	}
+	sort.StringSlice(keys).Sort()
+	return strings.Join(keys, ";")
+}
+
+func findNeighbors(grid []string, junctions *graphs.Graph[coords2d.Coords2d, struct{}], pos coords2d.Coords2d) map[coords2d.Coords2d]int {
+	neighbors := make(map[coords2d.Coords2d]int)
 	toVisit := []coords2d.Coords2d{pos}
 	var next []coords2d.Coords2d
 	dist := 0
@@ -40,8 +85,8 @@ func findNeighbors(grid []string, junctions map[coords2d.Coords2d]*Node, pos coo
 	for len(toVisit) > 0 {
 		head, toVisit = toVisit[0], toVisit[1:]
 		visited[head] = struct{}{}
-		if node, found := junctions[head]; pos != head && found {
-			neighbors[node] = dist
+		if _, err := junctions.GetVertex(head); err == nil && pos != head {
+			neighbors[head] = dist
 		} else {
 			for _, dir := range []coords2d.Coords2d{north, east, south, west} {
 				n := coords2d.Add(head, dir)
@@ -62,8 +107,8 @@ func findNeighbors(grid []string, junctions map[coords2d.Coords2d]*Node, pos coo
 	return neighbors
 }
 
-func buildJunctionGraph(grid []string) (*Node, *Node, map[coords2d.Coords2d]*Node) {
-	junctions := make(map[coords2d.Coords2d]*Node)
+func buildJunctionGraph(grid []string) *graphs.Graph[coords2d.Coords2d, struct{}] {
+	junctions := graphs.NewWeightedGraph[coords2d.Coords2d, struct{}]()
 	for y, line := range grid {
 		for x, c := range line {
 			if c != '#' {
@@ -76,74 +121,27 @@ func buildJunctionGraph(grid []string) (*Node, *Node, map[coords2d.Coords2d]*Nod
 				}
 				if options > 2 {
 					pos := coords2d.Coords2d{X: x, Y: y}
-					junctions[pos] = &Node{pos: pos, neighbors: make(map[*Node]int)}
+					junctions.AddVertex(pos, struct{}{})
 				}
 			}
 		}
 	}
 	startPos, endPos := coords2d.Coords2d{X: 2, Y: 1}, coords2d.Coords2d{X: len(grid[0]) - 3, Y: len(grid) - 2}
-	junctions[startPos] = &Node{pos: startPos, neighbors: make(map[*Node]int)}
-	junctions[endPos] = &Node{pos: endPos, neighbors: make(map[*Node]int)}
-	for k, v := range junctions {
-		v.neighbors = findNeighbors(grid, junctions, k)
-		var ns []string
-		for n, d := range v.neighbors {
-			ns = append(ns, fmt.Sprintf("%v(%d)", n.pos, d))
+	junctions.AddVertex(startPos, struct{}{})
+	junctions.AddVertex(endPos, struct{}{})
+	for k := range junctions.Vertices {
+		for n, d := range findNeighbors(grid, junctions, k) {
+			junctions.AddEdge(k, n, d)
 		}
 	}
-	return junctions[startPos], junctions[endPos], junctions
-}
-
-type State struct {
-	currNode *Node
-	path     map[*Node]int
-}
-
-func bfs(start, end *Node) int {
-	var queue []State
-	queue = append(queue, State{currNode: start, path: map[*Node]int{start: 0}})
-	var head State
-	var validPaths []State
-	for len(queue) > 0 {
-		head, queue = queue[0], queue[1:]
-		if head.currNode == end {
-			validPaths = append(validPaths, head)
-			continue
-		}
-		for n, d := range head.currNode.neighbors {
-			if _, found := head.path[n]; !found {
-				newPath := make(map[*Node]int)
-				for k, v := range head.path {
-					newPath[k] = v
-				}
-				newPath[n] = d
-				queue = append(queue, State{currNode: n, path: newPath})
-			}
-		}
-	}
-	max := 0
-	for _, vp := range validPaths {
-		len := 0
-		for _, d := range vp.path {
-			len += d
-		}
-		if len > max {
-			max = len
-		}
-	}
-	return max
+	return junctions
 }
 
 func solve(grid []string) int {
-	startNode, endNode, nodes := buildJunctionGraph(grid)
-	nn := make(map[coords2d.Coords2d]struct{})
-	for n := range nodes {
-		nn[n] = struct{}{}
-	}
-	return bfs(startNode, endNode)
+	graph := buildJunctionGraph(grid)
+	startPos, endPos := coords2d.Coords2d{X: 2, Y: 1}, coords2d.Coords2d{X: len(grid[0]) - 3, Y: len(grid) - 2}
+	return bfs(startPos, endPos, graph)
 }
-
-var target = coords2d.Coords2d{X: 0, Y: 0}
 
 func main() {
 	data := strings.TrimRight(string(files.ReadFile(os.Args[1])), "\n")
