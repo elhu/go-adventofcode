@@ -4,7 +4,7 @@ import (
 	"adventofcode/utils/coords/coords2d"
 	"adventofcode/utils/coords/coords3d"
 	"adventofcode/utils/files"
-	"adventofcode/utils/sets/intset"
+	set "adventofcode/utils/sets"
 	"fmt"
 	"os"
 	"sort"
@@ -64,7 +64,7 @@ func isSafe(coordToBrick map[coords3d.Coords3d]int, brickToCoords map[int][]coor
 		}
 	}
 	for sID := range supporting {
-		supportedBy := intset.New()
+		supportedBy := set.New[int]()
 		for _, coords := range brickToCoords[sID] {
 			if val, found := coordToBrick[coords3d.Coords3d{X: coords.X, Y: coords.Y, Z: coords.Z - 1}]; found && val != sID {
 				supportedBy.Add(val)

@@ -2,7 +2,7 @@ package main
 
 import (
 	"adventofcode/utils/files"
-	"adventofcode/utils/sets/intset"
+	set "adventofcode/utils/sets"
 	"fmt"
 	"os"
 	"strconv"
@@ -21,10 +21,10 @@ func atoi(s string) int {
 	return n
 }
 
-func parseLine(line string) (*intset.IntSet, *intset.IntSet) {
+func parseLine(line string) (*set.Set[int], *set.Set[int]) {
 	line = strings.Split(line, ": ")[1]
 	parts := strings.Split(line, " | ")
-	left, right := intset.New(), intset.New()
+	left, right := set.New[int](), set.New[int]()
 	for _, num := range strings.Fields(parts[0]) {
 		left.Add(atoi(num))
 	}

@@ -3,7 +3,7 @@ package main
 import (
 	"adventofcode/utils/coords/coords2d"
 	"adventofcode/utils/files"
-	"adventofcode/utils/sets/stringset"
+	set "adventofcode/utils/sets"
 	"fmt"
 	"os"
 	"strings"
@@ -88,7 +88,7 @@ func toKey(beam *Beam) string {
 
 func process(grid []string, startBeam *Beam) int {
 	beams := []*Beam{startBeam}
-	seen := stringset.New()
+	seen := set.New[string]()
 	for activeBeams(beams) > 0 {
 		for _, beam := range beams {
 			key := toKey(beam)
@@ -134,8 +134,8 @@ func solve(grid []string) int {
 	return max
 }
 
-func countEnergized(seen *stringset.StringSet) int {
-	visited := stringset.New()
+func countEnergized(seen *set.Set[string]) int {
+	visited := set.New[string]()
 	for _, key := range seen.Members() {
 		var x, y int
 		fmt.Sscanf(key, "%d:%d:%d", &x, &y)

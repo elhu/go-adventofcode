@@ -4,7 +4,7 @@ import (
 	"adventofcode/utils/coords/coords2d"
 	"adventofcode/utils/coords/coords3d"
 	"adventofcode/utils/files"
-	"adventofcode/utils/sets/intset"
+	set "adventofcode/utils/sets"
 	"fmt"
 	"os"
 	"sort"
@@ -55,8 +55,8 @@ func land(bricks []Brick) (map[coords3d.Coords3d]int, map[int][]coords3d.Coords3
 	return coordToBrick, brickToCoords
 }
 
-func getSupportedBricks(coordToBrick map[coords3d.Coords3d]int, brickToCoords map[int][]coords3d.Coords3d, brickID int, brokenBricks *intset.IntSet) []int {
-	supporting := intset.New()
+func getSupportedBricks(coordToBrick map[coords3d.Coords3d]int, brickToCoords map[int][]coords3d.Coords3d, brickID int, brokenBricks *set.Set[int]) []int {
+	supporting := set.New[int]()
 	for _, coords := range brickToCoords[brickID] {
 		if val, found := coordToBrick[coords3d.Coords3d{X: coords.X, Y: coords.Y, Z: coords.Z + 1}]; found && val != brickID {
 			supporting.Add(val)
@@ -64,7 +64,7 @@ func getSupportedBricks(coordToBrick map[coords3d.Coords3d]int, brickToCoords ma
 	}
 	var res []int
 	for _, sID := range supporting.Members() {
-		supportedBy := intset.New()
+		supportedBy := set.New[int]()
 		for _, coords := range brickToCoords[sID] {
 			if val, found := coordToBrick[coords3d.Coords3d{X: coords.X, Y: coords.Y, Z: coords.Z - 1}]; found && val != sID && !brokenBricks.HasMember(val) {
 				supportedBy.Add(val)
@@ -77,7 +77,7 @@ func getSupportedBricks(coordToBrick map[coords3d.Coords3d]int, brickToCoords ma
 	return res
 }
 
-func explode(coordToBrick map[coords3d.Coords3d]int, brickToCoords map[int][]coords3d.Coords3d, brickID int, brokenBricks *intset.IntSet) {
+func explode(coordToBrick map[coords3d.Coords3d]int, brickToCoords map[int][]coords3d.Coords3d, brickID int, brokenBricks *set.Set[int]) {
 	brokenBricks.Add(brickID)
 
 	for _, sb := range getSupportedBricks(coordToBrick, brickToCoords, brickID, brokenBricks) {
@@ -90,7 +90,7 @@ func solve(bricks []Brick) int {
 	res := 0
 
 	for _, brick := range bricks {
-		brokenBricks := intset.New()
+		brokenBricks := set.New[int]()
 		explode(coordToBrick, brickToCoord, brick.id, brokenBricks)
 		res += brokenBricks.Len() - 1
 	}

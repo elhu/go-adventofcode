@@ -2,7 +2,7 @@ package main
 
 import (
 	"adventofcode/utils/files"
-	"adventofcode/utils/sets/intset"
+	set "adventofcode/utils/sets"
 	"fmt"
 	"os"
 	"strconv"
@@ -32,7 +32,7 @@ func parseLine(line string) *card {
 	id := atoi(strings.Fields(parts[0])[1])
 	numbers := parts[1]
 	parts = strings.Split(numbers, " | ")
-	left, right := intset.New(), intset.New()
+	left, right := set.New[int](), set.New[int]()
 	for _, num := range strings.Fields(parts[0]) {
 		left.Add(atoi(num))
 	}
