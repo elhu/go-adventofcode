@@ -3,6 +3,7 @@ package main
 import (
 	"adventofcode/utils/coords/coords2d"
 	"adventofcode/utils/files"
+	set "adventofcode/utils/sets"
 	"bytes"
 	"fmt"
 	"os"
@@ -45,27 +46,28 @@ func lagrangeInterpolate(values [][2]int, toGuess int) int {
 }
 
 func bfs(lines [][]byte, startPos coords2d.Coords2d) int {
-	toVisit := make([]map[coords2d.Coords2d]struct{}, MAX_DEPTH+1)
-	toVisit[0] = map[coords2d.Coords2d]struct{}{startPos: {}}
-	toVisit[1] = map[coords2d.Coords2d]struct{}{}
+	toVisit := make([]*set.Set[coords2d.Coords2d], MAX_DEPTH+1)
+	toVisit[0] = set.New[coords2d.Coords2d]()
+	toVisit[0].Add(startPos)
+	toVisit[1] = set.New[coords2d.Coords2d]()
 
 	offset := MAX_DEPTH % len(lines)
 	rounds := MAX_DEPTH/len(lines) + 1
 	var sequence [][2]int
 
 	for i := 0; i < MAX_DEPTH; i++ {
-		toVisit[i+1] = make(map[coords2d.Coords2d]struct{})
-		for pos := range toVisit[i] {
+		toVisit[i+1] = set.New[coords2d.Coords2d]()
+		for _, pos := range toVisit[i].Members() {
 			for _, dir := range []coords2d.Coords2d{north, south, east, west} {
 				next := coords2d.Add(pos, dir)
 				modNext := coords2d.Coords2d{X: mod(next.X, len(lines[0])), Y: mod(next.Y, len(lines))}
 				if lines[modNext.Y][modNext.X] == '.' || lines[modNext.Y][modNext.X] == 'S' {
-					toVisit[i+1][next] = struct{}{}
+					toVisit[i+1].Add(next)
 				}
 			}
 		}
 		if (i-offset)%len(lines) == 0 {
-			sequence = append(sequence, [2]int{len(sequence) + 1, len(toVisit[i])})
+			sequence = append(sequence, [2]int{len(sequence) + 1, toVisit[i].Len()})
 		}
 		if len(sequence) == 3 {
 			break

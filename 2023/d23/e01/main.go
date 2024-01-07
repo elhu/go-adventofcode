@@ -3,6 +3,7 @@ package main
 import (
 	"adventofcode/utils/coords/coords2d"
 	"adventofcode/utils/files"
+	set "adventofcode/utils/sets"
 	"container/heap"
 	"fmt"
 	"os"
@@ -53,7 +54,7 @@ func (pq *PriorityQueue) Pop() any {
 
 type State struct {
 	pos      coords2d.Coords2d
-	visited  map[coords2d.Coords2d]struct{}
+	visited  *set.Set[coords2d.Coords2d]
 	priority int
 	index    int
 }
@@ -74,41 +75,34 @@ var vectors = map[byte][]coords2d.Coords2d{
 	'<': {west},
 }
 
-func copyVisited(visited map[coords2d.Coords2d]struct{}) map[coords2d.Coords2d]struct{} {
-	res := make(map[coords2d.Coords2d]struct{})
-	for k, v := range visited {
-		res[k] = v
-	}
-	return res
-}
-
 func astar(grid []string, startPos coords2d.Coords2d) int {
 	var pq PriorityQueue
 	heap.Init(&pq)
-	heap.Push(&pq, &State{pos: startPos, visited: map[coords2d.Coords2d]struct{}{startPos: struct{}{}}, priority: 0})
+	visited := set.New[coords2d.Coords2d]()
+	visited.Add(startPos)
+	heap.Push(&pq, &State{pos: startPos, visited: visited, priority: 0})
 	target := coords2d.Coords2d{X: len(grid[0]) - 3, Y: len(grid) - 2}
-	var candidatePaths []map[coords2d.Coords2d]struct{}
+	var candidatePaths []*set.Set[coords2d.Coords2d]
 	for pq.Len() > 0 {
 		curr := heap.Pop(&pq).(*State)
-		curr.visited[curr.pos] = struct{}{}
+		curr.visited.Add(curr.pos)
 		if curr.pos == target {
 			candidatePaths = append(candidatePaths, curr.visited)
-			fmt.Println(len(curr.visited) - 1)
 			continue
 		}
 		for _, dir := range vectors[grid[curr.pos.Y][curr.pos.X]] {
 			next := coords2d.Add(curr.pos, dir)
-			if _, v := curr.visited[next]; !v && grid[next.Y][next.X] != '#' {
-				visited := copyVisited(curr.visited)
-				visited[next] = struct{}{}
+			if !curr.visited.HasMember(next) && grid[next.Y][next.X] != '#' {
+				visited := set.NewFromSlice[coords2d.Coords2d](curr.visited.Members())
+				visited.Add(next)
 				heap.Push(&pq, &State{pos: next, visited: visited, priority: curr.priority + 1})
 			}
 		}
 	}
 	max := 0
 	for _, path := range candidatePaths {
-		if len(path) > max {
-			max = len(path)
+		if path.Len() > max {
+			max = path.Len()
 		}
 	}
 	return max

@@ -4,6 +4,7 @@ import (
 	"adventofcode/utils/coords/coords2d"
 	"adventofcode/utils/files"
 	"adventofcode/utils/graphs"
+	set "adventofcode/utils/sets"
 	"fmt"
 	"os"
 	"sort"
@@ -80,17 +81,17 @@ func findNeighbors(grid []string, junctions *graphs.Graph[coords2d.Coords2d, str
 	toVisit := []coords2d.Coords2d{pos}
 	var next []coords2d.Coords2d
 	dist := 0
-	visited := make(map[coords2d.Coords2d]struct{})
+	visited := set.New[coords2d.Coords2d]()
 	var head coords2d.Coords2d
 	for len(toVisit) > 0 {
 		head, toVisit = toVisit[0], toVisit[1:]
-		visited[head] = struct{}{}
+		visited.Add(head)
 		if _, err := junctions.GetVertex(head); err == nil && pos != head {
 			neighbors[head] = dist
 		} else {
 			for _, dir := range []coords2d.Coords2d{north, east, south, west} {
 				n := coords2d.Add(head, dir)
-				if _, found := visited[n]; !found {
+				if !visited.HasMember(n) {
 					if grid[n.Y][n.X] != '#' {
 						next = append(next, n)
 					}

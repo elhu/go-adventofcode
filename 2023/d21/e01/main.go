@@ -3,6 +3,7 @@ package main
 import (
 	"adventofcode/utils/coords/coords2d"
 	"adventofcode/utils/files"
+	set "adventofcode/utils/sets"
 	"bytes"
 	"fmt"
 	"os"
@@ -27,23 +28,23 @@ func pad(lines [][]byte, val byte) [][]byte {
 }
 
 func bfs(lines [][]byte, startPos coords2d.Coords2d) int {
-	toVisit := make([]map[coords2d.Coords2d]struct{}, MAX_DEPTH+1)
-	toVisit[0] = map[coords2d.Coords2d]struct{}{startPos: {}}
-	toVisit[1] = map[coords2d.Coords2d]struct{}{}
+	toVisit := make([]*set.Set[coords2d.Coords2d], MAX_DEPTH+1)
+	toVisit[0] = set.New[coords2d.Coords2d]()
+	toVisit[0].Add(startPos)
+	toVisit[1] = set.New[coords2d.Coords2d]()
 
 	for i := 0; i < MAX_DEPTH; i++ {
-		toVisit[i+1] = make(map[coords2d.Coords2d]struct{})
-		for pos := range toVisit[i] {
+		toVisit[i+1] = set.New[coords2d.Coords2d]()
+		for _, pos := range toVisit[i].Members() {
 			for _, dir := range []coords2d.Coords2d{north, south, east, west} {
 				next := coords2d.Add(pos, dir)
 				if lines[next.Y][next.X] == '.' || lines[next.Y][next.X] == 'S' {
-					toVisit[i+1][next] = struct{}{}
+					toVisit[i+1].Add(next)
 				}
 			}
 		}
-		fmt.Printf("%d: %d\n", len(toVisit[i+1]), len(toVisit[i+1])-len(toVisit[i]))
 	}
-	return len(toVisit[len(toVisit)-1])
+	return toVisit[len(toVisit)-1].Len()
 }
 
 func solve(lines [][]byte) int {
