@@ -3,6 +3,7 @@ package main
 import (
 	"adventofcode/utils/coords/coords2d"
 	"adventofcode/utils/files"
+	"adventofcode/utils/pqueue"
 	"container/heap"
 	"fmt"
 	"os"
@@ -20,39 +21,6 @@ type State struct {
 	pos         coords2d.Coords2d
 	dirIdx      int
 	moveCounter int
-	priority    int
-	index       int
-}
-
-type PriorityQueue []*State
-
-func (pq PriorityQueue) Len() int { return len(pq) }
-
-func (pq PriorityQueue) Less(i, j int) bool {
-	return pq[i].priority < pq[j].priority
-}
-
-func (pq PriorityQueue) Swap(i, j int) {
-	pq[i], pq[j] = pq[j], pq[i]
-	pq[i].index = i
-	pq[j].index = j
-}
-
-func (pq *PriorityQueue) Push(x any) {
-	n := len(*pq)
-	item := x.(*State)
-	item.index = n
-	*pq = append(*pq, item)
-}
-
-func (pq *PriorityQueue) Pop() any {
-	old := *pq
-	n := len(old)
-	item := old[n-1]
-	old[n-1] = nil  // avoid memory leak
-	item.index = -1 // for safety
-	*pq = old[0 : n-1]
-	return item
 }
 
 const maxMoves = 10
@@ -62,50 +30,52 @@ func inBounds(grid []string, pos coords2d.Coords2d) bool {
 	return pos.X >= 0 && pos.X < len(grid[0]) && pos.Y >= 0 && pos.Y < len(grid)
 }
 
-func toVisit(grid []string, seen map[[4]int]int, s *State) bool {
-	k := [4]int{s.pos.X, s.pos.Y, s.dirIdx, s.moveCounter}
-	if val, found := seen[k]; found && val <= s.priority {
+func toVisit(grid []string, seen map[[4]int]int, s *pqueue.Item[*State]) bool {
+	k := [4]int{s.Value.pos.X, s.Value.pos.Y, s.Value.dirIdx, s.Value.moveCounter}
+	if val, found := seen[k]; found && val <= s.Priority {
 		return false
 	}
-	seen[k] = s.priority
+	seen[k] = s.Priority
 	return true
 }
 
 func solve(grid []string) int {
-	var pq PriorityQueue
+	var pq pqueue.PriorityQueue[*State]
 	heap.Init(&pq)
-	heap.Push(&pq, &State{pos: coords2d.Coords2d{X: 0, Y: 0}, dirIdx: 2, moveCounter: 0, priority: 0}) // start facing south
-	heap.Push(&pq, &State{pos: coords2d.Coords2d{X: 0, Y: 0}, dirIdx: 1, moveCounter: 0, priority: 0}) // start facing east
+	heap.Push(&pq, &pqueue.Item[*State]{Value: &State{pos: coords2d.Coords2d{X: 0, Y: 0}, dirIdx: 2, moveCounter: 0}, Priority: 0}) // start facing south
+	heap.Push(&pq, &pqueue.Item[*State]{Value: &State{pos: coords2d.Coords2d{X: 0, Y: 0}, dirIdx: 1, moveCounter: 0}, Priority: 0}) // start facing east
 	target := coords2d.Coords2d{X: len(grid[0]) - 1, Y: len(grid) - 1}
 	seen := make(map[[4]int]int)
 
 	for pq.Len() > 0 {
-		item := heap.Pop(&pq).(*State)
-		if item.pos == target && item.moveCounter >= minMoves {
-			return item.priority
+		item := heap.Pop(&pq).(*pqueue.Item[*State])
+		if item.Value.pos == target && item.Value.moveCounter >= minMoves {
+			return item.Priority
 		}
 
-		seen[[4]int{item.pos.X, item.pos.Y, item.dirIdx, item.moveCounter}] = item.priority
+		seen[[4]int{item.Value.pos.X, item.Value.pos.Y, item.Value.dirIdx, item.Value.moveCounter}] = item.Priority
 		// 0..10 -> move straight
 		// 4..10 -> turn
-		if item.moveCounter < maxMoves {
-			if newPos := coords2d.Add(item.pos, directions[item.dirIdx]); inBounds(grid, newPos) {
-				newState := &State{pos: newPos, dirIdx: item.dirIdx, moveCounter: item.moveCounter + 1, priority: item.priority + int(grid[newPos.Y][newPos.X]-'0')}
-				if toVisit(grid, seen, newState) {
-					heap.Push(&pq, newState)
+		if item.Value.moveCounter < maxMoves {
+			if newPos := coords2d.Add(item.Value.pos, directions[item.Value.dirIdx]); inBounds(grid, newPos) {
+				newState := &State{pos: newPos, dirIdx: item.Value.dirIdx, moveCounter: item.Value.moveCounter + 1}
+				newItem := &pqueue.Item[*State]{Value: newState, Priority: item.Priority + int(grid[newPos.Y][newPos.X]-'0')}
+				if toVisit(grid, seen, newItem) {
+					heap.Push(&pq, newItem)
 				}
 			}
 		}
-		if item.moveCounter >= minMoves {
+		if item.Value.moveCounter >= minMoves {
 			for _, i := range []int{-1, 1} {
-				newDir := (item.dirIdx + i) % len(directions)
+				newDir := (item.Value.dirIdx + i) % len(directions)
 				if newDir < 0 {
 					newDir = len(directions) - 1
 				}
-				if newPos := coords2d.Add(item.pos, directions[newDir]); inBounds(grid, newPos) {
-					newState := &State{pos: newPos, dirIdx: newDir, moveCounter: 1, priority: item.priority + int(grid[newPos.Y][newPos.X]-'0')}
-					if toVisit(grid, seen, newState) {
-						heap.Push(&pq, newState)
+				if newPos := coords2d.Add(item.Value.pos, directions[newDir]); inBounds(grid, newPos) {
+					newState := &State{pos: newPos, dirIdx: newDir, moveCounter: 1}
+					newItem := &pqueue.Item[*State]{Value: newState, Priority: item.Priority + int(grid[newPos.Y][newPos.X]-'0')}
+					if toVisit(grid, seen, newItem) {
+						heap.Push(&pq, newItem)
 					}
 				}
 			}
