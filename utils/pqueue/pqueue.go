@@ -1,6 +1,6 @@
 package pqueue
 
-type Item[K comparable] struct {
+type Item[K any] struct {
 	Value    K   // The value of the item; arbitrary.
 	Priority int // The priority of the item in the queue.
 	// The index is needed by update and is maintained by the heap.Interface methods.
@@ -8,7 +8,7 @@ type Item[K comparable] struct {
 }
 
 // A priorityQueue implements heap.Interface and holds Items.
-type PriorityQueue[K comparable] []*Item[K]
+type PriorityQueue[K any] []*Item[K]
 
 func (pq PriorityQueue[K]) Len() int { return len(pq) }
 
