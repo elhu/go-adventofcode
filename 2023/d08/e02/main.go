@@ -2,6 +2,7 @@ package main
 
 import (
 	"adventofcode/utils/files"
+	"adventofcode/utils/math"
 	"fmt"
 	"os"
 	"strings"
@@ -22,27 +23,6 @@ func findStartNodes(nodes map[string]*Node) []*Node {
 	}
 
 	return sn
-}
-
-// greatest common divisor (GCD) via Euclidean algorithm
-func GCD(a, b int) int {
-	for b != 0 {
-		t := b
-		b = a % b
-		a = t
-	}
-	return a
-}
-
-// find Least Common Multiple (LCM) via GCD
-func LCM(a, b int, integers ...int) int {
-	result := a * b / GCD(a, b)
-
-	for i := 0; i < len(integers); i++ {
-		result = LCM(result, integers[i])
-	}
-
-	return result
 }
 
 func solve(nodes map[string]*Node, directions string) int {
@@ -66,7 +46,7 @@ func solve(nodes map[string]*Node, directions string) int {
 			break
 		}
 	}
-	return LCM(periods[0], periods[1], periods...)
+	return math.LCM(periods[0], periods[1], periods...)
 }
 
 func fetchOrCreateNode(nodes map[string]*Node, name string) *Node {
