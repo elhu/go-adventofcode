@@ -1,6 +1,7 @@
 package main
 
 import (
+	"adventofcode/utils/coords/coords2d"
 	"adventofcode/utils/coords/coords3d"
 	"adventofcode/utils/files"
 	"adventofcode/utils/sets"
@@ -25,17 +26,17 @@ func findStart(area [][]byte) coords3d.Coords3d {
 	panic("No start found")
 }
 
-func hasLoop(area [][]byte, curr coords3d.Coords3d) bool {
+func walkPath(area [][]byte, curr coords3d.Coords3d) (*sets.Set[coords3d.Coords3d], bool) {
 	visited := sets.New[coords3d.Coords3d]()
 	dir := 0
-	for curr.X >= 0 && curr.Y >= 0 && curr.X < len(area[0]) && curr.Y < len(area) {
+	for {
 		if visited.HasMember(curr) {
-			return true
+			return visited, true
 		}
 		visited.Add(curr)
 		newPos := coords3d.Add(curr, directions[dir])
 		if newPos.X < 0 || newPos.Y < 0 || newPos.X >= len(area[0]) || newPos.Y >= len(area) {
-			return false
+			return visited, false
 		}
 		if area[newPos.Y][newPos.X] == '#' {
 			newPos = curr
@@ -44,7 +45,15 @@ func hasLoop(area [][]byte, curr coords3d.Coords3d) bool {
 		}
 		curr = newPos
 	}
-	return false
+}
+
+func findPath(area [][]byte, curr coords3d.Coords3d) *sets.Set[coords2d.Coords2d] {
+	path, _ := walkPath(area, curr)
+	res := sets.New[coords2d.Coords2d]()
+	for _, pos := range path.Members() {
+		res.Add(coords2d.Coords2d{X: pos.X, Y: pos.Y})
+	}
+	return res
 }
 
 func makeCopy(area [][]byte) [][]byte {
@@ -59,15 +68,12 @@ func makeCopy(area [][]byte) [][]byte {
 func solve(area [][]byte) int {
 	curr := findStart(area)
 	res := 0
-	for y := 0; y < len(area); y++ {
-		for x := 0; x < len(area[0]); x++ {
-			if area[y][x] != '#' {
-				cpy := makeCopy(area)
-				cpy[y][x] = '#'
-				if hasLoop(cpy, curr) {
-					res += 1
-				}
-			}
+	initialPath := findPath(area, curr)
+	for _, pos := range initialPath.Members() {
+		cpy := makeCopy(area)
+		cpy[pos.Y][pos.X] = '#'
+		if _, looped := walkPath(cpy, curr); looped {
+			res += 1
 		}
 	}
 	return res
