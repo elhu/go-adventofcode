@@ -3,6 +3,7 @@ package main
 import (
 	"adventofcode/utils/coords/coords2d"
 	"adventofcode/utils/files"
+	aocm "adventofcode/utils/math"
 	"fmt"
 	"math"
 	"os"
@@ -28,16 +29,13 @@ const MAX_COST = 99999999999999999
 const OFFSET = 10000000000000
 
 func play(m Machine) int {
-	matrix := [2][3]float64{
+	matrix := [][]float64{
 		{float64(m.A.X), float64(m.B.X), float64(m.Prize.X)},
 		{float64(m.A.Y), float64(m.B.Y), float64(m.Prize.Y)},
 	}
-	coeff := matrix[1][0] / matrix[0][0]
-	matrix[1][0] -= coeff * matrix[0][0]
-	matrix[1][1] -= coeff * matrix[0][1]
-	matrix[1][2] -= coeff * matrix[0][2]
-	b := matrix[1][2] / matrix[1][1]
-	a := (matrix[0][2] - matrix[0][1]*b) / matrix[0][0]
+	aocm.GaussianElimination(matrix)
+	a := matrix[0][len(matrix[0])-1]
+	b := matrix[1][len(matrix[1])-1]
 	if math.Round(a)*float64(m.A.X)+math.Round(b)*float64(m.B.X) == float64(m.Prize.X) && math.Round(a)*float64(m.A.Y)+math.Round(b)*float64(m.B.Y) == float64(m.Prize.Y) {
 		return int(math.Round(a*A_COST) + math.Round(b))
 	}

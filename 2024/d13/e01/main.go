@@ -3,7 +3,9 @@ package main
 import (
 	"adventofcode/utils/coords/coords2d"
 	"adventofcode/utils/files"
+	aocm "adventofcode/utils/math"
 	"fmt"
+	"math"
 	"os"
 	"strings"
 )
@@ -25,21 +27,17 @@ const A_COST = 3
 const MAX_COST = MAX_PUSHES*A_COST + MAX_PUSHES
 
 func play(m Machine) int {
-	min := MAX_COST + 1
-	for a := 0; a < MAX_PUSHES; a++ {
-		dX := m.Prize.X - m.A.X*a
-		dY := m.Prize.Y - m.A.Y*a
-		if dX%m.B.X == 0 && dY%m.B.Y == 0 && dX/m.B.X == dY/m.B.Y {
-			b := dX / m.B.X
-			if a*A_COST+b < min {
-				min = a*A_COST + b
-			}
-		}
+	matrix := [][]float64{
+		{float64(m.A.X), float64(m.B.X), float64(m.Prize.X)},
+		{float64(m.A.Y), float64(m.B.Y), float64(m.Prize.Y)},
 	}
-	if min == MAX_COST+1 {
-		return 0
+	aocm.GaussianElimination(matrix)
+	a := matrix[0][len(matrix[0])-1]
+	b := matrix[1][len(matrix[1])-1]
+	if math.Round(a)*float64(m.A.X)+math.Round(b)*float64(m.B.X) == float64(m.Prize.X) && math.Round(a)*float64(m.A.Y)+math.Round(b)*float64(m.B.Y) == float64(m.Prize.Y) {
+		return int(math.Round(a*A_COST) + math.Round(b))
 	}
-	return min
+	return 0
 }
 
 func solve(machines []Machine) int {
