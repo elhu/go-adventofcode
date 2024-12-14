@@ -4,9 +4,6 @@ import (
 	"adventofcode/utils/coords/coords2d"
 	"adventofcode/utils/files"
 	"fmt"
-	"image"
-	"image/draw"
-	"image/png"
 	"os"
 	"strings"
 )
@@ -22,41 +19,43 @@ func parseBot(data string) Bot {
 	return b
 }
 
-// const WIDTH = 11
-// const HEIGHT = 7
 const WIDTH = 101
 const HEIGHT = 103
 
-func printBots(bots []Bot) {
-	grid := make([][]byte, HEIGHT)
-	for i := range grid {
-		grid[i] = []byte(strings.Repeat(".", WIDTH))
+func variance(vals []int) int {
+	avg := 0
+	for _, v := range vals {
+		avg += v
 	}
-	for _, b := range bots {
-		grid[b.pos.Y][b.pos.X] = '#'
+	avg /= len(vals)
+	variance := 0
+	for _, v := range vals {
+		variance += (v - avg) * (v - avg)
 	}
-	for i := range grid {
-		fmt.Println(string(grid[i]))
-	}
-	fmt.Println("\n\n")
+	return variance
 }
 
 func solve(bots []Bot) int {
+	minVariance := 1000000000
+	bestTime := -1
 	for t := 0; t < 10000; t++ {
-		img := image.NewRGBA(image.Rect(0, 0, WIDTH, HEIGHT))
-		draw.Draw(img, img.Bounds(), &image.Uniform{image.Black}, image.ZP, draw.Src)
+		xs := make([]int, len(bots))
+		ys := make([]int, len(bots))
 		for i := range bots {
 			bots[i].pos = coords2d.Add(bots[i].pos, bots[i].vec)
 			bots[i].pos.X = (bots[i].pos.X + WIDTH) % WIDTH
 			bots[i].pos.Y = (bots[i].pos.Y + HEIGHT) % HEIGHT
-			img.Set(bots[i].pos.X, bots[i].pos.Y, image.White)
+			xs[i] = bots[i].pos.X
+			ys[i] = bots[i].pos.Y
 		}
-		f, _ := os.Create("out/" + fmt.Sprintf("%06d", t) + ".png")
-		defer f.Close()
-		png.Encode(f, img)
+		// Since the tree is a tight cluster, this is when the variance is the lowest
+		v := variance(xs) + variance(ys)
+		if v < minVariance {
+			minVariance = v
+			bestTime = t + 1
+		}
 	}
-	// Now use your eyes
-	return 0
+	return bestTime
 }
 
 func main() {
