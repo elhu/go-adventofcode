@@ -162,7 +162,7 @@ func (g *Graph[K, T]) weightedShortestPath(from K, to K) ([]K, error) {
 			if visited[edge.ToKey] > visited[edge.FromKey]+edge.Weight {
 				visited[edge.ToKey] = visited[edge.FromKey] + edge.Weight
 				prev[edge.ToKey] = edge.FromKey
-				heap.Push(&pq, &pqueue.Item[K]{Value: edge.ToKey, Priority: visited[edge.ToKey]})
+				heap.Push(&pq, &pqueue.Item[K]{Value: edge.ToKey, Priority: -visited[edge.ToKey]})
 			}
 		}
 	}
@@ -190,7 +190,7 @@ func (g *Graph[K, T]) weightedShortestDistance(from K, to K) (int, error) {
 		for _, edge := range g.Edges[item.Value] {
 			if visited[edge.ToKey] > visited[edge.FromKey]+edge.Weight {
 				visited[edge.ToKey] = visited[edge.FromKey] + edge.Weight
-				heap.Push(&pq, &pqueue.Item[K]{Value: edge.ToKey, Priority: visited[edge.ToKey]})
+				heap.Push(&pq, &pqueue.Item[K]{Value: edge.ToKey, Priority: -visited[edge.ToKey]})
 			}
 		}
 	}
