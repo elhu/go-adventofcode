@@ -1,6 +1,7 @@
 package main
 
 import (
+	"adventofcode/utils/coords/coords2d"
 	"adventofcode/utils/coords/coords3d"
 	"adventofcode/utils/files"
 	"adventofcode/utils/graphs"
@@ -77,25 +78,85 @@ func buildGraph(lines []string) *graphs.Graph[coords3d.Coords3d, coords3d.Coords
 	return graph
 }
 
-func solve(graph *graphs.Graph[coords3d.Coords3d, coords3d.Coords3d], start, end coords3d.Coords3d, lines []string) int {
-	_, err := graph.GetVertex(start)
-	if err != nil {
-		panic(err)
-	}
-	res := 99999999999999999
-	for i := range dirs {
-		e := coords3d.Coords3d{X: end.X, Y: end.Y, Z: i}
-		if _, err := graph.GetVertex(e); err != nil {
-			fmt.Println("Can't find end vertex", e)
+func coords3dto2d(c coords3d.Coords3d) coords2d.Coords2d {
+	return coords2d.Coords2d{X: c.X, Y: c.Y}
+}
+
+func minVertex(unvisited *sets.Set[coords3d.Coords3d], nd map[coords3d.Coords3d]int) (coords3d.Coords3d, int) {
+	min := 99999999999999999
+	var res coords3d.Coords3d
+	unvisited.Each(func(c coords3d.Coords3d) {
+		if nd[c] < min {
+			min = nd[c]
+			res = c
 		}
-		dist, err := graph.ShortestDistance(start, e)
-		if err == nil {
-			if dist < res {
-				res = dist
+	})
+	return res, min
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func solve(graph *graphs.Graph[coords3d.Coords3d, coords3d.Coords3d], from, to coords3d.Coords3d) int {
+	unvisited := sets.New[coords3d.Coords3d]()
+	nd := make(map[coords3d.Coords3d]int)
+	prev := make(map[coords3d.Coords3d][]coords3d.Coords3d)
+	for v := range graph.Vertices {
+		unvisited.Add(v)
+		prev[v] = []coords3d.Coords3d{}
+		nd[v] = 99999999999999999
+	}
+	nd[from] = 0
+	for {
+		v, d := minVertex(unvisited, nd)
+		if d == 99999999999999999 {
+			break
+		}
+		for _, edge := range graph.Edges[v] {
+			newDist := nd[v] + edge.Weight
+			if newDist <= nd[edge.ToKey] {
+				nd[edge.ToKey] = newDist
+				prev[edge.ToKey] = append(prev[edge.ToKey], v)
 			}
 		}
+		unvisited.Remove(v)
 	}
-	return res
+	targetLen := nd[to]
+	for d := range dirs {
+		e := coords3d.Coords3d{X: to.X, Y: to.Y, Z: d}
+		if nd[e] < targetLen {
+			targetLen = nd[e]
+		}
+	}
+	res := sets.New[coords2d.Coords2d]()
+	for d := range dirs {
+		e := coords3d.Coords3d{X: to.X, Y: to.Y, Z: d}
+		if nd[e] == targetLen {
+			res = res.Union(createPath(prev, e))
+		}
+	}
+	return res.Len()
+}
+
+func createPath(prev map[coords3d.Coords3d][]coords3d.Coords3d, e coords3d.Coords3d) *sets.Set[coords2d.Coords2d] {
+	queue := []coords3d.Coords3d{e}
+	onPath := sets.New[coords2d.Coords2d]()
+	var curr coords3d.Coords3d
+	for len(queue) > 0 {
+		curr, queue = queue[0], queue[1:]
+		for _, p := range prev[curr] {
+			for c := p; coords3dto2d(c) != coords3dto2d(curr); c = coords3d.Add(c, dirs[c.Z]) {
+				onPath.Add(coords3dto2d(c))
+			}
+			onPath.Add(coords3dto2d(curr))
+			queue = append(queue, p)
+		}
+	}
+	return onPath
 }
 
 func main() {
@@ -104,5 +165,5 @@ func main() {
 	g := buildGraph(lines)
 	s := coords3d.Coords3d{X: 1, Y: len(lines) - 2, Z: 0}
 	e := coords3d.Coords3d{X: len(lines[0]) - 2, Y: 1, Z: 0}
-	fmt.Println(solve(g, s, e, lines))
+	fmt.Println(solve(g, s, e))
 }
