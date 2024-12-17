@@ -1,5 +1,9 @@
 package pqueue
 
+import (
+	"container/heap"
+)
+
 type Item[K any] struct {
 	Value    K   // The value of the item; arbitrary.
 	Priority int // The priority of the item in the queue.
@@ -28,6 +32,12 @@ func (pq *PriorityQueue[K]) Push(x any) {
 	item := x.(*Item[K])
 	item.index = n
 	*pq = append(*pq, item)
+}
+
+func (pq *PriorityQueue[K]) Update(item *Item[K], value K, priority int) {
+	item.Value = value
+	item.Priority = priority
+	heap.Fix(pq, 0)
 }
 
 func (pq *PriorityQueue[K]) Pop() any {
