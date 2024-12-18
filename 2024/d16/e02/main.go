@@ -9,8 +9,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-
-	"github.com/rdleal/go-priorityq/kpq"
 )
 
 var EAST, SOUTH, WEST, NORTH = coords3d.Coords3d{X: 1, Y: 0, Z: 0}, coords3d.Coords3d{X: 0, Y: 1, Z: 0}, coords3d.Coords3d{X: -1, Y: 0, Z: 0}, coords3d.Coords3d{X: 0, Y: -1, Z: 0}
@@ -85,67 +83,27 @@ func coords3dto2d(c coords3d.Coords3d) coords2d.Coords2d {
 }
 
 func solve(graph *graphs.Graph[coords3d.Coords3d, coords3d.Coords3d], from, to coords3d.Coords3d) int {
-	cmp := func(a, b int) bool { return a < b }
-	pq := kpq.NewKeyedPriorityQueue[coords3d.Coords3d](cmp)
-	prev := make(map[coords3d.Coords3d][]coords3d.Coords3d)
-
-	distances := make(map[coords3d.Coords3d]int)
-	for v := range graph.Vertices {
-		distances[v] = 99999999999999999
-		pq.Push(v, 99999999999999999)
-		prev[v] = []coords3d.Coords3d{}
+	tl := 99999999999999999
+	var tt coords3d.Coords3d
+	for d := range dirs {
+		e := coords3d.Coords3d{X: to.X, Y: to.Y, Z: d}
+		dist, err := graph.ShortestDistance(from, e)
+		if err == nil && dist < tl {
+			tl = dist
+			tt = e
+		}
 	}
-	pq.Update(from, 0)
-	distances[from] = 0
-
-	for pq.Len() > 0 {
-		curr, _, _ := pq.Pop()
-		for _, edge := range graph.Edges[curr] {
-			newDist := distances[curr] + edge.Weight
-			if newDist <= distances[edge.ToKey] {
-				distances[edge.ToKey] = newDist
-				prev[edge.ToKey] = append(prev[edge.ToKey], curr)
-				pq.Update(edge.ToKey, newDist)
+	paths, _ := graph.AllShortestPaths(from, tt)
+	res := sets.New[coords2d.Coords2d]()
+	for _, path := range paths {
+		for i := len(path) - 1; i > 0; i-- {
+			for c := path[i]; coords3dto2d(c) != coords3dto2d(path[i-1]); c = coords3d.Add(c, dirs[c.Z]) {
+				res.Add(coords3dto2d(c))
 			}
 		}
-	}
-	targetLen := distances[to]
-	for d := range dirs {
-		e := coords3d.Coords3d{X: to.X, Y: to.Y, Z: d}
-		if distances[e] < targetLen {
-			targetLen = distances[e]
-		}
-	}
-	res := sets.New[coords2d.Coords2d]()
-	for d := range dirs {
-		e := coords3d.Coords3d{X: to.X, Y: to.Y, Z: d}
-		if distances[e] == targetLen {
-			res = res.Union(createPath(prev, e))
-		}
+		res.Add(coords3dto2d(path[0]))
 	}
 	return res.Len()
-}
-
-func solve2(graph *graphs.Graph[coords3d.Coords3d, coords3d.Coords3d], from, to coords3d.Coords3d) int {
-	fmt.Println(graph.AllShortestPaths(from, to))
-	return 0
-}
-
-func createPath(prev map[coords3d.Coords3d][]coords3d.Coords3d, e coords3d.Coords3d) *sets.Set[coords2d.Coords2d] {
-	queue := []coords3d.Coords3d{e}
-	onPath := sets.New[coords2d.Coords2d]()
-	var curr coords3d.Coords3d
-	for len(queue) > 0 {
-		curr, queue = queue[0], queue[1:]
-		for _, p := range prev[curr] {
-			for c := p; coords3dto2d(c) != coords3dto2d(curr); c = coords3d.Add(c, dirs[c.Z]) {
-				onPath.Add(coords3dto2d(c))
-			}
-			onPath.Add(coords3dto2d(curr))
-			queue = append(queue, p)
-		}
-	}
-	return onPath
 }
 
 func main() {
@@ -155,5 +113,4 @@ func main() {
 	s := coords3d.Coords3d{X: 1, Y: len(lines) - 2, Z: 0}
 	e := coords3d.Coords3d{X: len(lines[0]) - 2, Y: 1, Z: 0}
 	fmt.Println(solve(g, s, e))
-	fmt.Println(solve2(g, s, e))
 }

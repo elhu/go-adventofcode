@@ -161,6 +161,7 @@ func (g *Graph[K, T]) weightedAllShortestPaths(from K, to K) ([][]K, error) {
 		prev[v] = []K{}
 		pq.Push(v, maxDist)
 	}
+	distances[from] = 0
 	pq.Update(from, 0)
 
 	for pq.Len() > 0 {
@@ -186,7 +187,7 @@ type n[K comparable] struct {
 }
 
 func backtrackPaths[K comparable](prev map[K][]K, to K) [][]K {
-	queue := []n[K]{n[K]{to, nil}}
+	queue := []n[K]{{to, []K{to}}}
 	paths := make([][]K, 0)
 	var curr n[K]
 	for len(queue) > 0 {
@@ -201,7 +202,6 @@ func backtrackPaths[K comparable](prev map[K][]K, to K) [][]K {
 			queue = append(queue, n[K]{e, np})
 		}
 	}
-
 	return paths
 }
 
@@ -216,9 +216,13 @@ func (g *Graph[K, T]) weightedShortestDistance(from K, to K) (int, error) {
 		pq.Push(v, maxDist)
 	}
 	pq.Update(from, 0)
+	distances[from] = 0
 
 	for pq.Len() > 0 {
-		curr, _, _ := pq.Pop()
+		curr, dist, _ := pq.Pop()
+		if curr == to {
+			return dist, nil
+		}
 		for _, edge := range g.Edges[curr] {
 			newDist := distances[curr] + edge.Weight
 			if newDist <= distances[edge.ToKey] {
@@ -227,8 +231,5 @@ func (g *Graph[K, T]) weightedShortestDistance(from K, to K) (int, error) {
 			}
 		}
 	}
-	if distances[to] == maxDist {
-		return -1, PathNotFound
-	}
-	return distances[to], nil
+	return -1, PathNotFound
 }
