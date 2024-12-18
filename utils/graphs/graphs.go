@@ -1,9 +1,9 @@
 package graphs
 
 import (
-	"adventofcode/utils/pqueue"
-	"container/heap"
 	"errors"
+
+	"github.com/rdleal/go-priorityq/kpq"
 )
 
 var (
@@ -100,6 +100,14 @@ func (g *Graph[K, T]) ShortestPath(from K, to K) ([]K, error) {
 	}
 }
 
+func (g *Graph[K, T]) AllShortestPaths(from K, to K) ([][]K, error) {
+	if g.Weighted {
+		return g.weightedAllShortestPaths(from, to)
+	} else {
+		return nil, NotImplemented
+	}
+}
+
 func (g *Graph[K, T]) ShortestDistance(from K, to K) (int, error) {
 	if g.Weighted {
 		return g.weightedShortestDistance(from, to)
@@ -134,63 +142,92 @@ func (g *Graph[K, T]) unWeightedShortestPath(from K, to K) ([]K, error) {
 }
 
 func (g *Graph[K, T]) weightedShortestPath(from K, to K) ([]K, error) {
-	const maxInt = 2147483647
-
-	visited := make(map[K]int)
-	prev := make(map[K]K)
-	for k := range g.Vertices {
-		visited[k] = maxInt
+	paths, err := g.weightedAllShortestPaths(from, to)
+	if err != nil {
+		return nil, err
 	}
-	visited[from] = 0
+	return paths[0], nil
+}
 
-	var pq pqueue.PriorityQueue[K]
-	heap.Init(&pq)
-	heap.Push(&pq, &pqueue.Item[K]{Value: from, Priority: 0})
+func (g *Graph[K, T]) weightedAllShortestPaths(from K, to K) ([][]K, error) {
+	const maxDist = 99999999999999999
+	cmp := func(a, b int) bool { return a < b }
+	pq := kpq.NewKeyedPriorityQueue[K](cmp)
+	prev := make(map[K][]K)
+
+	distances := make(map[K]int)
+	for v := range g.Vertices {
+		distances[v] = maxDist
+		prev[v] = []K{}
+		pq.Push(v, maxDist)
+	}
+	distances[from] = 0
+	pq.Update(from, 0)
 
 	for pq.Len() > 0 {
-		item := heap.Pop(&pq).(*pqueue.Item[K])
-		if item.Value == to {
-			path := []K{to}
-			for prev[to] != from {
-				path = append(path, prev[to])
-				to = prev[to]
-			}
-			path = append(path, from)
-			return path, nil
-		}
-		for _, edge := range g.Edges[item.Value] {
-			if visited[edge.ToKey] > visited[edge.FromKey]+edge.Weight {
-				visited[edge.ToKey] = visited[edge.FromKey] + edge.Weight
-				prev[edge.ToKey] = edge.FromKey
-				heap.Push(&pq, &pqueue.Item[K]{Value: edge.ToKey, Priority: -visited[edge.ToKey]})
+		curr, _, _ := pq.Pop()
+		for _, edge := range g.Edges[curr] {
+			newDist := distances[curr] + edge.Weight
+			if newDist <= distances[edge.ToKey] {
+				distances[edge.ToKey] = newDist
+				prev[edge.ToKey] = append(prev[edge.ToKey], curr)
+				pq.Update(edge.ToKey, newDist)
 			}
 		}
 	}
-	return nil, PathNotFound
+	if distances[to] == maxDist {
+		return nil, PathNotFound
+	}
+	return backtrackPaths(prev, to), nil
+}
+
+type n[K comparable] struct {
+	curr K
+	path []K
+}
+
+func backtrackPaths[K comparable](prev map[K][]K, to K) [][]K {
+	queue := []n[K]{{to, []K{to}}}
+	paths := make([][]K, 0)
+	var curr n[K]
+	for len(queue) > 0 {
+		curr, queue = queue[0], queue[1:]
+		if len(prev[curr.curr]) == 0 {
+			paths = append(paths, curr.path)
+		}
+		for _, e := range prev[curr.curr] {
+			np := make([]K, len(curr.path))
+			copy(np, curr.path)
+			np = append(np, e)
+			queue = append(queue, n[K]{e, np})
+		}
+	}
+	return paths
 }
 
 func (g *Graph[K, T]) weightedShortestDistance(from K, to K) (int, error) {
-	const maxInt = 2147483647
+	const maxDist = 99999999999999999
+	cmp := func(a, b int) bool { return a < b }
+	pq := kpq.NewKeyedPriorityQueue[K](cmp)
 
-	visited := make(map[K]int)
-	for k := range g.Vertices {
-		visited[k] = maxInt
+	distances := make(map[K]int)
+	for v := range g.Vertices {
+		distances[v] = maxDist
+		pq.Push(v, maxDist)
 	}
-	visited[from] = 0
-
-	var pq pqueue.PriorityQueue[K]
-	heap.Init(&pq)
-	heap.Push(&pq, &pqueue.Item[K]{Value: from, Priority: 0})
+	pq.Update(from, 0)
+	distances[from] = 0
 
 	for pq.Len() > 0 {
-		item := heap.Pop(&pq).(*pqueue.Item[K])
-		if item.Value == to {
-			return visited[item.Value], nil
+		curr, dist, _ := pq.Pop()
+		if curr == to {
+			return dist, nil
 		}
-		for _, edge := range g.Edges[item.Value] {
-			if visited[edge.ToKey] > visited[edge.FromKey]+edge.Weight {
-				visited[edge.ToKey] = visited[edge.FromKey] + edge.Weight
-				heap.Push(&pq, &pqueue.Item[K]{Value: edge.ToKey, Priority: -visited[edge.ToKey]})
+		for _, edge := range g.Edges[curr] {
+			newDist := distances[curr] + edge.Weight
+			if newDist <= distances[edge.ToKey] {
+				distances[edge.ToKey] = newDist
+				pq.Update(edge.ToKey, newDist)
 			}
 		}
 	}
