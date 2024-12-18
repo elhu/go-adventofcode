@@ -3,6 +3,7 @@ package main
 import (
 	"adventofcode/utils/coords/coords2d"
 	"adventofcode/utils/files"
+	"adventofcode/utils/grids"
 	"adventofcode/utils/sets"
 	"fmt"
 	"os"
@@ -20,7 +21,7 @@ func atoi(s string) int {
 	return n
 }
 
-var dirs = []coords2d.Coords2d{{X: 0, Y: -1}, {X: 0, Y: 1}, {X: -1, Y: 0}, {X: 1, Y: 0}}
+var dirs = grids.ALL_DIRS
 
 func findPath(grid map[coords2d.Coords2d]byte, start, end coords2d.Coords2d) int {
 	visited := sets.New[coords2d.Coords2d]()
@@ -50,19 +51,11 @@ func findPath(grid map[coords2d.Coords2d]byte, start, end coords2d.Coords2d) int
 	return -1
 }
 
-func copyGrid(grid map[coords2d.Coords2d]byte) map[coords2d.Coords2d]byte {
-	newGrid := make(map[coords2d.Coords2d]byte)
-	for k, v := range grid {
-		newGrid[k] = v
-	}
-	return newGrid
-}
-
-func solve(grid map[coords2d.Coords2d]byte, blocks []coords2d.Coords2d, start, end coords2d.Coords2d) string {
+func solve(grid grids.Grid[byte], blocks []coords2d.Coords2d, start, end coords2d.Coords2d) string {
 	for i := 1024; i < len(blocks); i++ {
-		cpy := copyGrid(grid)
+		cpy := grid.Copy()
 		for j := 0; j < i; j++ {
-			cpy[blocks[j]] = '#'
+			cpy.Set(blocks[j], '#')
 		}
 		if findPath(cpy, start, end) == -1 {
 			return fmt.Sprintf("%d,%d", blocks[i-1].X, blocks[i-1].Y)
@@ -74,10 +67,10 @@ func solve(grid map[coords2d.Coords2d]byte, blocks []coords2d.Coords2d, start, e
 func main() {
 	data := strings.TrimRight(string(files.ReadFile(os.Args[1])), "\n")
 	lines := strings.Split(data, "\n")
-	grid := make(map[coords2d.Coords2d]byte)
+	grid := grids.NewGrid[byte](WIDTH, HEIGHT)
 	for i := 0; i < HEIGHT; i++ {
 		for j := 0; j < WIDTH; j++ {
-			grid[coords2d.Coords2d{X: j, Y: i}] = '.'
+			grid.Set(coords2d.Coords2d{X: j, Y: i}, '.')
 		}
 	}
 	blocks := []coords2d.Coords2d{}
